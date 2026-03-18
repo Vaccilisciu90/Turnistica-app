@@ -44,7 +44,7 @@ th{font-size:12px;color:var(--muted)}
 .hour-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #eef1f6;font-size:13px}
 .alerts{margin:0;padding-left:18px}
 #printTableWrap{overflow:auto}
-#printTable{min-width:1400px}
+#printTable{min-width:1100px}
 #printTable td,#printTable th{text-align:center}
 #printTable .namecol{text-align:left;white-space:nowrap}
 #editSection{scroll-margin-top:18px}
@@ -53,16 +53,14 @@ th{font-size:12px;color:var(--muted)}
   body{background:#fff}
   .no-print{display:none!important}
   .wrap{max-width:none;margin:0;padding:0}
-  .card{break-inside:avoid-page;page-break-inside:avoid;border:1px solid #ccc;margin-bottom:6px;padding:6px}
+  .card{border:none;margin:0;padding:0}
   #printArea{page-break-inside:avoid;break-inside:avoid}
   #printTable{width:100%;min-width:0;table-layout:fixed}
   #printTable th,#printTable td{font-size:8px;padding:3px 2px;word-wrap:break-word}
   #printTable .namecol{font-size:8px}
   .print-only{display:block!important}
 }
-@media screen{
-  .print-only{display:none!important}
-}
+@media screen{.print-only{display:none!important}}
 @media (max-width:1300px){.grid,.totals,.summary-grid{grid-template-columns:1fr}}
 @media (max-width:1100px){.daygrid{grid-template-columns:repeat(2,1fr)}.field,.wide,.full{grid-column:span 12}}
 </style>
@@ -71,7 +69,7 @@ th{font-size:12px;color:var(--muted)}
 <div class="wrap">
   <div class="card no-print">
     <h1>Md Buona Spesa Italia</h1>
-    <p class="lead">Versione corretta: modifica turno locale, PDF in una pagina tabellare, reparti Ortofrutta e Cassa.</p>
+    <p class="lead">Versione corretta: pomeriggio base 2 persone, PDF compatto su una pagina con solo turno, ore giorno e totali.</p>
     <div class="actions">
       <button onclick="loadDemo()">Demo</button>
       <button class="secondary" onclick="generateWeek()">Genera planning</button>
@@ -81,7 +79,6 @@ th{font-size:12px;color:var(--muted)}
       <button class="warn" onclick="window.print()">PDF</button>
     </div>
     <div id="status" class="small" style="margin-top:10px"></div>
-    <div class="notice" style="margin-top:12px"><strong>Uso rapido:</strong> 1) scegli il negozio, 2) controlla i dipendenti, 3) genera il planning, 4) modifica un turno se serve, 5) controlla alert e costi.</div>
   </div>
 
   <div class="grid no-print">
@@ -111,14 +108,6 @@ th{font-size:12px;color:var(--muted)}
         <div class="field"><label>Minimo reparto 2</label><input id="dept2Min" type="number" value="1"></div>
         <div class="field"><label>Secondo fruttivendolo</label><select id="hasSecondFruit"><option value="NO">NO</option><option value="SI">SI</option></select></div>
         <div class="field wide"><label>Nome secondo fruttivendolo</label><input id="secondFruitName" value="Secondo Fruttivendolo"></div>
-      </div>
-      <div class="totals" style="margin-top:12px">
-        <div class="kpi"><div class="small">Produttività budget</div><div id="kpiBudgetProductivity" class="pill">0,00 €/h</div></div>
-        <div class="kpi"><div class="small">Ore consigliate</div><div id="kpiSuggestedWeekHours" class="pill">0,00 h</div></div>
-        <div class="kpi"><div class="small">Ore residue mese</div><div id="kpiMonthHoursLeft" class="pill">0,00 h</div></div>
-        <div class="kpi"><div class="small">Target settimana</div><div id="kpiWeekTarget" class="pill">0,00 h</div></div>
-        <div class="kpi"><div class="small">Produttività prevista</div><div id="kpiForecastProd" class="pill">0,00 €/h</div></div>
-        <div class="kpi"><div class="small">Scostamento</div><div id="kpiTargetDelta" class="pill">0,00 h</div></div>
       </div>
     </div>
 
@@ -161,48 +150,33 @@ th{font-size:12px;color:var(--muted)}
     </div>
 
     <div class="card">
-      <h2>4. Compiti e assenze</h2>
-      <div class="row">
-        <div class="field"><label>Giorno</label><select id="taskDay"></select></div>
-        <div class="field wide"><label>Dipendente</label><select id="taskEmployee"></select></div>
-        <div class="field"><label>Stato</label><select id="taskStatus"><option value="IN_TURNO">In turno</option><option value="RIPOSO">Riposo</option><option value="FERIE">Ferie</option><option value="MALATTIA">Malattia</option><option value="ROL">ROL</option><option value="MATERNITA">Maternità</option><option value="ALTRO">Altro</option></select></div>
-        <div class="field full"><label>Compito del giorno</label><textarea id="taskText" placeholder="Es. display, inventario, promo, seconda cassa, scarico..."></textarea></div>
-        <div class="field"><button onclick="saveTaskNote()">Salva</button></div>
-        <div class="field"><button class="ghost" onclick="deleteTaskNote()">Elimina</button></div>
+      <h2>4. Modifica turno</h2>
+      <div id="editSection">
+        <div id="editModeBox" class="notice" style="margin-bottom:10px">Modalità: nuovo turno</div>
+        <div class="row">
+          <div class="field"><label>Giorno</label><select id="manualDay"></select></div>
+          <div class="field wide"><label>Dipendente</label><select id="manualEmployee"></select></div>
+          <div class="field"><label>Ruolo turno</label><input id="manualRole"></div>
+          <div class="field"><label>Reparto</label><select id="manualDept"></select></div>
+          <div class="field"><label>Inizio</label><input id="manualStart" type="time" value="14:00"></div>
+          <div class="field"><label>Fine</label><input id="manualEnd" type="time" value="17:15"></div>
+          <div class="field"><label>Categoria</label><select id="manualCategory"><option value="normal">Normale</option><option value="overtime">Straordinario</option><option value="travel-normal">Trasferta ordinaria</option><option value="travel-overtime">Trasferta straordinaria</option></select></div>
+          <div class="field"><label>Chiusura</label><select id="manualClosure"><option value="NO">NO</option><option value="SI">SI</option></select></div>
+          <div class="field full"><div class="actions"><button id="saveShiftBtn" onclick="saveManualShift()">Salva turno</button><button class="ghost" onclick="resetManualForm()">Pulisci</button></div></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="grid no-print">
-    <div class="card" id="editSection">
-      <h2>5. Modifica turno</h2>
-      <div id="editModeBox" class="notice" style="margin-bottom:10px">Modalità: nuovo turno</div>
-      <div class="row">
-        <div class="field"><label>Giorno</label><select id="manualDay"></select></div>
-        <div class="field wide"><label>Dipendente</label><select id="manualEmployee"></select></div>
-        <div class="field"><label>Ruolo turno</label><input id="manualRole"></div>
-        <div class="field"><label>Reparto</label><select id="manualDept"></select></div>
-        <div class="field"><label>Inizio</label><input id="manualStart" type="time" value="14:00"></div>
-        <div class="field"><label>Fine</label><input id="manualEnd" type="time" value="17:15"></div>
-        <div class="field"><label>Categoria</label><select id="manualCategory"><option value="normal">Normale</option><option value="overtime">Straordinario</option><option value="travel-normal">Trasferta ordinaria</option><option value="travel-overtime">Trasferta straordinaria</option></select></div>
-        <div class="field"><label>Chiusura</label><select id="manualClosure"><option value="NO">NO</option><option value="SI">SI</option></select></div>
-        <div class="field full"><div class="actions"><button id="saveShiftBtn" onclick="saveManualShift()">Salva turno</button><button class="ghost" onclick="resetManualForm()">Pulisci</button></div></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>6. Alert</h2>
-      <div class="notice">Se manca una figura di gerenza, il planning non è valido: serve straordinario equivalente, trasferta equivalente o risorsa esterna.</div>
-      <div id="blockingBox" style="margin-top:12px"></div>
-      <ul class="alerts" id="alertsList" style="margin-top:12px"></ul>
-    </div>
+  <div class="card no-print">
+    <h2>5. Alert</h2>
+    <div id="blockingBox" style="margin-top:12px"></div>
+    <ul class="alerts" id="alertsList" style="margin-top:12px"></ul>
   </div>
 
   <div class="card">
-    <h2>7. Planning settimana</h2>
-    <div class="notice" style="margin-bottom:12px"><strong>Lettura rapida:</strong> giallo = straordinario, verde = Ortofrutta, azzurro = gerenza, beige = part time.</div>
+    <h2>6. Planning settimana</h2>
     <div class="daygrid no-print" id="weekGrid"></div>
-
     <div id="printTableWrap">
       <table id="printTable">
         <thead id="printThead"></thead>
@@ -210,11 +184,6 @@ th{font-size:12px;color:var(--muted)}
         <tfoot id="printTfoot"></tfoot>
       </table>
     </div>
-  </div>
-
-  <div class="card no-print">
-    <h2>8. Ore giornaliere per persona</h2>
-    <div class="summary-grid" id="dailyHoursGrid"></div>
   </div>
 </div>
 
@@ -249,8 +218,8 @@ function defaultEmployees(){return[
 {id:uid(),firstName:"Enrico",lastName:"Dore",gender:"M",type:"PT",role:"AddettoVendita",level:"4",cost:12,dept1:"Cassa",dept2:"",notes:""}
 ];}
 function defaultState(){return{stores:DEFAULT_STORES, activeStore:DEFAULT_STORES[0].name, employees:defaultEmployees(), days:[], taskNotes:{}};}
-function loadState(){try{const raw=localStorage.getItem("md_buona_spesa_italia_fix_v4"); if(raw) return JSON.parse(raw);}catch(e){} return defaultState();}
-function saveState(){localStorage.setItem("md_buona_spesa_italia_fix_v4", JSON.stringify(state));}
+function loadState(){try{const raw=localStorage.getItem("md_buona_spesa_italia_fix_v5"); if(raw) return JSON.parse(raw);}catch(e){} return defaultState();}
+function saveState(){localStorage.setItem("md_buona_spesa_italia_fix_v5", JSON.stringify(state));}
 function saveData(){saveCurrentStoreToState(); saveState(); setStatus("Dati salvati correttamente");}
 
 function currentDepartments(){return ["Ortofrutta","Cassa"];}
@@ -270,28 +239,18 @@ function applyStoreProfile(){
   state.activeStore=storeSelect.value;
   const s=activeStoreObj();
   storeName.value=s.name; planningMode.value=s.planningMode||"automatico"; minimumWeekHours.value=s.minimumWeekHours; monthlyBudget.value=s.monthlyBudget; monthlyHours.value=s.monthlyHours; usedMonthHours.value=s.usedMonthHours; weeklyForecast.value=s.weeklyForecast; weekTargetHours.value=s.weekTargetHours; dept1Name.value="Ortofrutta"; dept1Min.value=s.dept1Min||2; dept2Name.value="Cassa"; dept2Min.value=s.dept2Min||1; hasSecondFruit.value=s.hasSecondFruit||"NO"; secondFruitName.value=s.secondFruitName||"Secondo Fruttivendolo";
-  populateDeptSelects(); recalcBudget();
+  populateDeptSelects();
 }
 function saveStoreProfile(){saveCurrentStoreToState(); populateStoreSelect(); populateDeptSelects(); saveState(); setStatus(`Profilo salvato: ${state.activeStore}`);}
-function recalcBudget(){
-  const b=Number(monthlyBudget.value||0), h=Number(monthlyHours.value||0), f=Number(weeklyForecast.value||0), used=Number(usedMonthHours.value||0), min=Number(minimumWeekHours.value||248);
-  const prod=h>0?b/h:0, suggested=prod>0?f/prod:min, safeSuggested=Math.max(min,suggested), residual=Math.max(0,h-used), target=weekHoursMode.value==="manual"?Number(weekTargetHours.value||min):safeSuggested, targetSafe=Math.max(min,target);
-  kpiBudgetProductivity.textContent=`${fmt(prod)} €/h`; kpiSuggestedWeekHours.textContent=`${fmt(safeSuggested)} h`; kpiMonthHoursLeft.textContent=`${fmt(residual)} h`; kpiWeekTarget.textContent=`${fmt(targetSafe)} h`; kpiForecastProd.textContent=`${fmt(targetSafe>0?f/targetSafe:0)} €/h`; kpiTargetDelta.textContent=`${fmt(targetSafe-safeSuggested)} h`;
-  if(weekHoursMode.value!=="manual") weekTargetHours.value=targetSafe.toFixed(2);
-}
-function getWeekTarget(){recalcBudget(); return Math.max(Number(minimumWeekHours.value||248), Number(weekTargetHours.value||248));}
 
 function populateControls(){
   populateStoreSelect();
   const dayOpts=DAYS.map(d=>`<option value="${d}">${d}</option>`).join("");
-  taskDay.innerHTML=dayOpts; manualDay.innerHTML=dayOpts;
+  manualDay.innerHTML=dayOpts;
   applyStoreProfile();
   const opts='<option value=""></option>'+state.employees.slice().sort((a,b)=>shortName(a).localeCompare(shortName(b))).map(e=>`<option value="${e.id}">${shortName(e)} (${displayRole(e)})</option>`).join("");
-  taskEmployee.innerHTML=opts; manualEmployee.innerHTML=opts;
-  syncTaskEditor();
+  manualEmployee.innerHTML=opts;
 }
-function syncTaskEditor(){const item=state.taskNotes[taskKey(taskDay.value, taskEmployee.value)]||{}; taskText.value=item.text||""; taskStatus.value=item.status||"IN_TURNO";}
-
 function addEmployee(){
   const first=(empFirstName.value||"").trim(), last=(empLastName.value||"").trim();
   if(!first||!last){setStatus("Inserisci nome e cognome","error"); return;}
@@ -303,22 +262,9 @@ function addEmployee(){
 function removeEmployee(id){
   state.employees=state.employees.filter(e=>e.id!==id);
   state.days.forEach(d=>d.shifts=d.shifts.filter(s=>s.empId!==id));
-  Object.keys(state.taskNotes).forEach(k=>{if(k.endsWith(`__${id}`)) delete state.taskNotes[k];});
   saveState(); renderAll(); setStatus("Dipendente eliminato");
 }
-function saveTaskNote(){
-  const day=taskDay.value, empId=taskEmployee.value;
-  if(!day||!empId){setStatus("Seleziona giorno e dipendente","error"); return;}
-  state.taskNotes[taskKey(day, empId)]={status:taskStatus.value, text:taskText.value.trim()};
-  saveState(); renderAll(); setStatus("Compito/stato salvato");
-}
-function deleteTaskNote(){
-  const day=taskDay.value, empId=taskEmployee.value;
-  if(!day||!empId) return;
-  delete state.taskNotes[taskKey(day, empId)];
-  taskText.value=""; saveState(); renderAll(); setStatus("Compito/stato eliminato");
-}
-function empStatus(dayName, empId){return state.taskNotes[taskKey(dayName, empId)]?.status || "IN_TURNO";}
+function empStatus(dayName, empId){return "IN_TURNO";}
 
 function ensureSecondFruit(){
   if(hasSecondFruit.value!=="SI") return;
@@ -331,67 +277,55 @@ function ensureSecondFruit(){
 
 function generateWeek(){
   ensureSecondFruit();
-  if(planningMode.value==="libero" && state.days.length){setStatus("Modalità libera attiva: i turni non vengono rigenerati automaticamente.","error"); return;}
   const managers=state.employees.filter(e=>isManagement(e));
   if(!managers.length){setStatus("Manca la gerenza","error"); return;}
   const fruitWorkers=state.employees.filter(e=>e.role==="Fruttivendolo"||e.dept1==="Ortofrutta"||e.dept2==="Ortofrutta");
-  const otherWorkers=state.employees.filter(e=>e.dept1==="Cassa"||e.dept2==="Cassa"||e.role==="AddettoVendita"||e.role==="Secondo Assistente");
+  const cashWorkers=state.employees.filter(e=>e.dept1==="Cassa"||e.dept2==="Cassa"||e.role==="AddettoVendita"||e.role==="Secondo Assistente");
   const days=[];
   for(let i=0;i<DAYS.length;i++){
-    const dayName=DAYS[i];
-    const shifts=[];
+    const dayName=DAYS[i], shifts=[];
     if(dayName!=="Domenica"){
       const openMgr=managers[i % managers.length];
       const closeMgr=managers[(i+1) % managers.length];
-      if(empStatus(dayName, openMgr.id)==="IN_TURNO") shifts.push(mkShift(openMgr.id, displayRole(openMgr), "", "06:30", "14:00", {isOvertime:true}));
+      shifts.push(mkShift(openMgr.id, displayRole(openMgr), "", "06:30", "14:00", {isOvertime:true}));
       const pier=state.employees.find(e=>e.firstName==="Pierpaolo");
-      if(pier && empStatus(dayName, pier.id)==="IN_TURNO"){
+      if(pier){
         const early=(dayName==="Lunedì"||dayName==="Martedì");
         shifts.push(mkShift(pier.id, displayRole(pier), "Ortofrutta", early?"06:30":"07:00", early?"13:00":"13:15"));
       }
-      const secondFruitNameValue=(secondFruitName.value||"").trim();
-      const secondFruit=state.employees.find(e=>e.firstName===secondFruitNameValue);
-      if(hasSecondFruit.value==="SI" && secondFruit && empStatus(dayName, secondFruit.id)==="IN_TURNO"){
+      const secondFruit=state.employees.find(e=>e.firstName===(secondFruitName.value||"").trim());
+      if(hasSecondFruit.value==="SI" && secondFruit){
         const morning=(i%2===0);
         shifts.push(mkShift(secondFruit.id, displayRole(secondFruit), "Ortofrutta", morning?"07:00":"17:30", morning?"13:15":"21:15", {isClosure:!morning}));
       }
-      const morningSupport=otherWorkers.find(e=>empStatus(dayName, e.id)==="IN_TURNO" && !shifts.some(s=>s.empId===e.id));
-      if(morningSupport) shifts.push(mkShift(morningSupport.id, displayRole(morningSupport), "Cassa", "07:30", "14:00"));
-      if(closeMgr.id!==openMgr.id && empStatus(dayName, closeMgr.id)==="IN_TURNO") shifts.push(mkShift(closeMgr.id, displayRole(closeMgr), "", "14:00", "21:15", {isClosure:true}));
-      const ptWorkers=state.employees.filter(e=>e.type==="PT" && empStatus(dayName, e.id)==="IN_TURNO" && !shifts.some(s=>s.empId===e.id));
-      if(ptWorkers[0]) shifts.push(mkShift(ptWorkers[0].id, displayRole(ptWorkers[0]), ptWorkers[0].dept1||"Cassa", "14:00", "17:15"));
-      if(ptWorkers[1]) shifts.push(mkShift(ptWorkers[1].id, displayRole(ptWorkers[1]), ptWorkers[1].dept1||"Cassa", "17:15", "20:30", {isClosure:true}));
-      if(ptWorkers[2]) shifts.push(mkShift(ptWorkers[2].id, displayRole(ptWorkers[2]), ptWorkers[2].dept1||"Cassa", "17:30", "21:15", {isClosure:true}));
+      const cashMorning=cashWorkers.find(e=>!shifts.some(s=>s.empId===e.id));
+      if(cashMorning) shifts.push(mkShift(cashMorning.id, displayRole(cashMorning), "Cassa", "07:30", "14:00"));
+      
+      // POMERIGGIO STRUTTURA FISSA
+      shifts.push(mkShift(closeMgr.id, displayRole(closeMgr), "", "14:00", "21:15", {isClosure:true}));
+      const pt1=cashWorkers.find(e=>!shifts.some(s=>s.empId===e.id));
+      if(pt1) shifts.push(mkShift(pt1.id, displayRole(pt1), "Cassa", "14:00", "17:15"));
+      const pt2=cashWorkers.find(e=>!shifts.some(s=>s.empId===e.id));
+      if(pt2) shifts.push(mkShift(pt2.id, displayRole(pt2), "Cassa", "17:15", "20:30"));
+      const pt3=cashWorkers.find(e=>!shifts.some(s=>s.empId===e.id));
+      if(pt3) shifts.push(mkShift(pt3.id, displayRole(pt3), "Cassa", "17:30", "21:15", {isClosure:true}));
+
+      if(cashClose) shifts.push(mkShift(cashClose.id, displayRole(cashClose), "Cassa", "17:30", "21:15", {isClosure:true}));
     } else {
       const mgr1=managers[0], mgr2=managers[1]||managers[0];
-      if(empStatus(dayName, mgr1.id)==="IN_TURNO") shifts.push(mkShift(mgr1.id, displayRole(mgr1), "", "07:00", "14:00"));
-      const fruit1=fruitWorkers[0], fruit2=fruitWorkers[1]||otherWorkers[0], cassa=otherWorkers[1]||state.employees.find(e=>e.type==="PT");
-      if(fruit1 && empStatus(dayName, fruit1.id)==="IN_TURNO") shifts.push(mkShift(fruit1.id, displayRole(fruit1), "Ortofrutta", "07:00", "13:15"));
-      if(fruit2 && empStatus(dayName, fruit2.id)==="IN_TURNO") shifts.push(mkShift(fruit2.id, displayRole(fruit2), "Ortofrutta", "07:00", "13:15"));
-      if(cassa && empStatus(dayName, cassa.id)==="IN_TURNO") shifts.push(mkShift(cassa.id, displayRole(cassa), "Cassa", "08:00", "14:00"));
-      if(empStatus(dayName, mgr2.id)==="IN_TURNO") shifts.push(mkShift(mgr2.id, displayRole(mgr2), "", "14:00", "21:15", {isClosure:true}));
-      const sup=state.employees.find(e=>empStatus(dayName, e.id)==="IN_TURNO" && !shifts.some(s=>s.empId===e.id));
-      if(sup) shifts.push(mkShift(sup.id, displayRole(sup), sup.dept1||"Cassa", "14:00", "21:15", {isClosure:true}));
+      shifts.push(mkShift(mgr1.id, displayRole(mgr1), "", "07:00", "14:00"));
+      const fruit1=fruitWorkers[0], fruit2=fruitWorkers[1]||cashWorkers[0], cassa=cashWorkers[1]||cashWorkers[0];
+      if(fruit1) shifts.push(mkShift(fruit1.id, displayRole(fruit1), "Ortofrutta", "07:00", "13:15"));
+      if(fruit2 && fruit2.id!==fruit1?.id) shifts.push(mkShift(fruit2.id, displayRole(fruit2), "Ortofrutta", "07:00", "13:15"));
+      if(cassa && !shifts.some(s=>s.empId===cassa.id)) shifts.push(mkShift(cassa.id, displayRole(cassa), "Cassa", "08:00", "14:00"));
+      shifts.push(mkShift(mgr2.id, displayRole(mgr2), "", "14:00", "21:15", {isClosure:true}));
+      const close2=cashWorkers.find(e=>!shifts.some(s=>s.empId===e.id));
+      if(close2) shifts.push(mkShift(close2.id, displayRole(close2), "Cassa", "14:00", "21:15", {isClosure:true}));
     }
     days.push({dayName, shifts});
   }
   state.days=days;
-  let delta=getWeekTarget()-weeklySummary().ordinary;
-  let idx=0;
-  const extras=state.employees.filter(e=>e.type!=="EXT");
-  while(delta>0.24 && idx<12 && planningMode.value!=="libero"){
-    const day=state.days[idx % state.days.length];
-    const emp=extras[idx % extras.length];
-    if(empStatus(day.dayName, emp.id)==="IN_TURNO"){
-      const block=Math.min(3.25, delta);
-      const mins=14*60 + Math.round(block*60);
-      const hh=String(Math.floor(mins/60)).padStart(2,"0"), mm=String(mins%60).padStart(2,"0");
-      day.shifts.push(mkShift(emp.id, displayRole(emp), emp.dept1||"Cassa", "14:00", `${hh}:${mm}`));
-      delta -= block;
-    }
-    idx += 1;
-  }
-  saveCurrentStoreToState(); saveState(); renderAll(); setStatus("Planning generato");
+  saveState(); renderAll(); setStatus("Planning generato");
 }
 
 function resetManualForm(){
@@ -424,7 +358,8 @@ function saveManualShift(){
   } else {
     day.shifts.push(shift);
   }
-  saveState(); renderAll(); resetManualForm(); setStatus(editRef?"Turno modificato correttamente":"Turno aggiunto correttamente");
+  const wasEdit=!!editRef;
+  saveState(); renderAll(); resetManualForm(); setStatus(wasEdit?"Turno modificato correttamente":"Turno aggiunto correttamente");
 }
 function editShift(dayName, shiftId){
   const day=state.days.find(d=>d.dayName===dayName), shift=day?.shifts.find(s=>s.id===shiftId);
@@ -442,8 +377,7 @@ function editShift(dayName, shiftId){
   editModeBox.className="successbox";
   editModeBox.innerHTML=`Modalità: modifica turno di <strong>${shortName(findEmp(shift.empId))}</strong> - ${dayName}`;
   saveShiftBtn.textContent="Aggiorna turno";
-  const editSection=document.getElementById("editSection");
-  editSection.scrollIntoView({behavior:"smooth", block:"center"});
+  document.getElementById("editSection").scrollIntoView({behavior:"smooth", block:"center"});
 }
 function deleteShift(dayName, shiftId){
   const day=state.days.find(d=>d.dayName===dayName); if(!day) return;
@@ -467,10 +401,6 @@ function weeklyCosts(){
   }));
   return {ordinaryCost, otCost, extCost, total:ordinaryCost+otCost+extCost};
 }
-function dailyRests(dayName){
-  const scheduled=new Set((state.days.find(d=>d.dayName===dayName)?.shifts||[]).map(s=>s.empId));
-  return state.employees.filter(e=>!scheduled.has(e.id)).map(e=>shortName(e));
-}
 function managementCoverage(day){
   const open=day.shifts.some(s=>{const emp=findEmp(s.empId); return isManagement(emp)&&s.start<="07:30";});
   const close=day.shifts.some(s=>{const emp=findEmp(s.empId); return isManagement(emp)&&s.end>="21:15";});
@@ -478,16 +408,10 @@ function managementCoverage(day){
 }
 function validation(){
   const alerts=[]; const blocking=[];
-  const week=weeklySummary();
-  if(week.ordinary<Number(minimumWeekHours.value||248)) alerts.push(`Sei sotto il minimo settimanale: ${fmt(week.ordinary)} h`);
   state.days.forEach(day=>{
     const cov=managementCoverage(day);
     if(day.dayName!=="Domenica" && !cov.open) blocking.push(`${day.dayName}: manca copertura di gerenza in apertura`);
     if(!cov.close) blocking.push(`${day.dayName}: manca copertura di gerenza in chiusura`);
-    const d1=day.shifts.filter(s=>s.dept==="Ortofrutta" || isFruitShift(s)).length;
-    const d2=day.shifts.filter(s=>s.dept==="Cassa").length;
-    if(d1<Number(dept1Min.value||0)) alerts.push(`${day.dayName}: Ortofrutta sotto il minimo di ${dept1Min.value}`);
-    if(d2<Number(dept2Min.value||0)) alerts.push(`${day.dayName}: Cassa sotto il minimo di ${dept2Min.value}`);
   });
   return {alerts, blocking};
 }
@@ -520,75 +444,58 @@ function renderWeek(){
       if(emp?.type==="PT") cls+=" pt";
       if(isFruitShift(s)) cls+=" fruit";
       if(s.isOvertime) cls+=" ot";
-      const task=state.taskNotes[taskKey(day.dayName, s.empId)];
       html += `<div class="${cls}">
         <strong>${shortName(emp)}</strong> <span class="badge">${fmt(shiftHours(s.start,s.end))} h</span>
-        <span class="badge">${displayRole(emp)}</span>
-        ${s.dept?`<span class="badge">${s.dept}</span>`:""}
-        ${s.isTravel?'<span class="badge">Trasferta</span>':''}
-        ${s.isOvertime?'<span class="badge">OT</span>':''}
-        <br><span class="small">${s.roleLabel} · ${s.start}-${s.end}</span>
-        ${task?.text?`<div class="taskbox"><strong>${task.status}:</strong> ${task.text}</div>`:""}
+        <br><span class="small">${s.start}-${s.end}${s.dept?` · ${s.dept}`:""}${s.isTravel?" · Trasf.":""}</span>
         <div class="actions no-print" style="margin-top:8px">
           <button class="ghost" onclick='editShift(${JSON.stringify(day.dayName)}, ${JSON.stringify(s.id)})'>Modifica</button>
           <button class="ghost" onclick='deleteShift(${JSON.stringify(day.dayName)}, ${JSON.stringify(s.id)})'>Elimina</button>
         </div>
       </div>`;
     });
-    html += `<div class="hour-row"><span>Ore lavorate</span><strong>${fmt(sum.worked)} h</strong></div>
-             <div class="hour-row"><span>Ordinarie</span><strong>${fmt(sum.ordinary)} h</strong></div>
-             <div class="hour-row"><span>Straordinario/trasferta</span><strong>${fmt(sum.overtime)} h</strong></div>
-             <div class="hour-row"><span>Riposo</span><strong>${dailyRests(day.dayName).join(", ")||"-"}</strong></div>`;
+    html += `<div class="hour-row"><span>Totale giorno</span><strong>${fmt(sum.worked)} h</strong></div>`;
     box.innerHTML=html; grid.appendChild(box);
-  });
-}
-function renderDailyHours(){
-  const el=document.getElementById("dailyHoursGrid"); el.innerHTML="";
-  state.days.forEach(day=>{
-    const sum=dailySummary(day);
-    const box=document.createElement("div"); box.className="daybox";
-    let html=`<h3>${day.dayName}</h3>`;
-    Object.keys(sum.byPerson).sort((a,b)=>shortName(findEmp(a)).localeCompare(shortName(findEmp(b)))).forEach(id=>{
-      const emp=findEmp(id), task=state.taskNotes[taskKey(day.dayName, id)]?.text||"";
-      html += `<div class="hour-row"><span>${shortName(emp)}${task?` - ${task}`:""}</span><strong>${fmt(sum.byPerson[id])} h</strong></div>`;
-    });
-    box.innerHTML=html; el.appendChild(box);
   });
 }
 function renderPrintTable(){
   const emps=sortedEmployees();
   let thead='<tr><th class="namecol">Dipendente</th>';
   DAYS.forEach(d=>thead+=`<th>${d}</th>`);
-  thead+='<th>Totale sett.</th><th>Trasferta</th></tr>';
+  thead+='<th>Totale sett.</th><th>Trasf.</th></tr>';
   printThead.innerHTML=thead;
 
   let tbody='';
   emps.forEach(emp=>{
     let total=0, travel=0;
-    tbody+=`<tr><td class="namecol"><strong>${shortName(emp)}</strong><br><span style="font-size:10px">${displayRole(emp)}</span></td>`;
+    tbody+=`<tr><td class="namecol"><strong>${shortName(emp)}</strong></td>`;
     DAYS.forEach(dayName=>{
       const day=state.days.find(d=>d.dayName===dayName);
       const shifts=(day?.shifts||[]).filter(s=>s.empId===emp.id);
       if(!shifts.length){
-        const status=empStatus(dayName, emp.id);
-        tbody+=`<td>${status==="IN_TURNO"?"Riposo":status}</td>`;
+        tbody+=`<td>-</td>`;
       } else {
-        const parts=shifts.map(s=>{
-          const h=shiftHours(s.start,s.end);
-          total+=h;
-          if(s.isTravel) travel+=h;
-          return `${s.start}-${s.end}${s.dept?`<br>${s.dept}`:""}${s.isTravel?"<br>Trasf.":""}`;
-        }).join('<hr style="border:none;border-top:1px solid #ddd;margin:2px 0">');
-        tbody+=`<td>${parts}</td>`;
+        const text=shifts.map(s=>{
+          const h=shiftHours(s.start,s.end); total+=h; if(s.isTravel) travel+=h;
+          return `${s.start}-${s.end}<br>${fmt(h)} h`;
+        }).join('<hr style="border:none;border-top:1px solid #ddd;margin:1px 0">');
+        tbody+=`<td>${text}</td>`;
       }
     });
     tbody+=`<td><strong>${fmt(total)} h</strong></td><td>${travel>0?fmt(travel)+" h":"-"}</td></tr>`;
   });
   printTbody.innerHTML=tbody;
 
+  const dayTotals=DAYS.map(dayName=>{
+    const day=state.days.find(d=>d.dayName===dayName);
+    return day ? dailySummary(day).worked : 0;
+  });
   const week=weeklySummary();
   const travelWeek=state.days.reduce((acc,d)=>acc + d.shifts.filter(s=>s.isTravel).reduce((a,s)=>a+shiftHours(s.start,s.end),0),0);
-  printTfoot.innerHTML=`<tr><td class="namecol" colspan="8" style="text-align:right"><strong>Totale settimanale</strong></td><td><strong>${fmt(week.worked)} h</strong></td><td><strong>${travelWeek>0?fmt(travelWeek)+" h":"-"}</strong></td></tr>`;
+
+  let foot=`<tr><td class="namecol"><strong>Totale giorno</strong></td>`;
+  dayTotals.forEach(v=>foot+=`<td><strong>${fmt(v)} h</strong></td>`);
+  foot+=`<td><strong>${fmt(week.worked)} h</strong></td><td><strong>${travelWeek>0?fmt(travelWeek)+" h":"-"}</strong></td></tr>`;
+  printTfoot.innerHTML=foot;
 }
 function renderKpi(){
   const week=weeklySummary(), costs=weeklyCosts(), v=validation();
@@ -603,19 +510,17 @@ function exportJSON(){
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="md_buona_spesa_italia.json"; a.click();
 }
 function exportCSV(){
-  const v=validation();
-  if(v.blocking.length){setStatus("Export bloccato: manca copertura di gerenza.","error"); return;}
   let csv="Dipendente,Ruolo,Lunedì,Martedì,Mercoledì,Giovedì,Venerdì,Sabato,Domenica,Totale settimana,Trasferta\n";
   sortedEmployees().forEach(emp=>{
     let row=[shortName(emp),displayRole(emp)], total=0, travel=0;
     DAYS.forEach(dayName=>{
       const day=state.days.find(d=>d.dayName===dayName);
       const shifts=(day?.shifts||[]).filter(s=>s.empId===emp.id);
-      if(!shifts.length){row.push(empStatus(dayName, emp.id)==="IN_TURNO"?"Riposo":empStatus(dayName, emp.id));}
+      if(!shifts.length){row.push("-");}
       else{
         row.push(shifts.map(s=>{
           const h=shiftHours(s.start,s.end); total+=h; if(s.isTravel) travel+=h;
-          return `${s.start}-${s.end} ${s.dept||""}`.trim();
+          return `${s.start}-${s.end} ${h.toFixed(2)}h`;
         }).join(" | "));
       }
     });
@@ -625,8 +530,8 @@ function exportCSV(){
   const blob=new Blob([csv], {type:"text/csv;charset=utf-8;"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="md_buona_spesa_italia.csv"; a.click();
 }
 function loadDemo(){state=defaultState(); saveState(); renderAll(); generateWeek(); setStatus("Demo caricata");}
-function renderAll(){populateControls(); renderEmployees(); if(state.days.length){renderWeek(); renderDailyHours();} renderKpi();}
-document.addEventListener("change", e=>{if(e.target&&(e.target.id==="taskDay"||e.target.id==="taskEmployee")) syncTaskEditor();});
+function renderAll(){populateControls(); renderEmployees(); if(state.days.length){renderWeek();} renderKpi();}
+document.addEventListener("change", ()=>{});
 if('serviceWorker' in navigator){window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 renderAll(); if(!state.days.length) generateWeek();
 </script>
