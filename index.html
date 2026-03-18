@@ -10,11 +10,11 @@
 :root{--bg:#f6f7fb;--card:#fff;--line:#d9deea;--text:#1f2937;--muted:#6b7280;--accent:#1f4e78;--ot:#fff2cc;--mg:#dbeafe;--pt:#fff7cc;--fruit:#dcfce7;--danger:#fef2f2}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
-.wrap{max-width:1800px;margin:18px auto;padding:0 12px 28px}
+.wrap{max-width:1850px;margin:18px auto;padding:0 12px 28px}
 .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
 h1{margin:0 0 6px;font-size:28px}h2{margin:0 0 10px;font-size:18px}h3{margin:0 0 8px;font-size:15px}
 .lead,.small{color:var(--muted)}
-.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+.grid{display:grid;grid-template-columns:1.08fr .92fr;gap:14px}
 .row{display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end}
 .field{grid-column:span 3}.wide{grid-column:span 6}.full{grid-column:span 12}
 label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
@@ -43,31 +43,35 @@ th{font-size:12px;color:var(--muted)}
 .summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .hour-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #eef1f6;font-size:13px}
 .alerts{margin:0;padding-left:18px}
-#weekGrid, #dailyHoursGrid{page-break-inside:avoid}
+#printTableWrap{overflow:auto}
+#printTable{min-width:1400px}
+#printTable td,#printTable th{text-align:center}
+#printTable .namecol{text-align:left;white-space:nowrap}
+#editSection{scroll-margin-top:18px}
 @media print{
-  @page{size:A4 landscape;margin:8mm}
+  @page{size:A4 landscape;margin:6mm}
   body{background:#fff}
   .no-print{display:none!important}
   .wrap{max-width:none;margin:0;padding:0}
-  .card{break-inside:avoid-page;page-break-inside:avoid;border:1px solid #ccc;margin-bottom:8px;padding:8px}
-  .daygrid{grid-template-columns:repeat(7,1fr);gap:6px}
-  .daybox{padding:6px}
-  .shift{font-size:10px;padding:4px;margin-bottom:4px}
-  h1,h2,h3{margin:0 0 4px}
-  h2{font-size:14px}
-  .hour-row{font-size:10px;padding:2px 0}
-  .badge{font-size:9px;padding:1px 4px}
-  .taskbox{font-size:9px;padding:4px}
+  .card{break-inside:avoid-page;page-break-inside:avoid;border:1px solid #ccc;margin-bottom:6px;padding:6px}
+  #printArea{page-break-inside:avoid;break-inside:avoid}
+  #printTable{width:100%;min-width:0;table-layout:fixed}
+  #printTable th,#printTable td{font-size:8px;padding:3px 2px;word-wrap:break-word}
+  #printTable .namecol{font-size:8px}
+  .print-only{display:block!important}
 }
-@media (max-width:1300px){.grid,.totals,.summary-grid{grid-template-columns:1fr}.field,.wide,.full{grid-column:span 12}}
-@media (max-width:1100px){.daygrid{grid-template-columns:repeat(2,1fr)}}
+@media screen{
+  .print-only{display:none!important}
+}
+@media (max-width:1300px){.grid,.totals,.summary-grid{grid-template-columns:1fr}}
+@media (max-width:1100px){.daygrid{grid-template-columns:repeat(2,1fr)}.field,.wide,.full{grid-column:span 12}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card no-print">
     <h1>Md Buona Spesa Italia</h1>
-    <p class="lead">Versione corretta: modifica turno funzionante, planning settimanale in una sola schermata, reparti solo Ortofrutta o Cassa.</p>
+    <p class="lead">Versione corretta: modifica turno locale, PDF in una pagina tabellare, reparti Ortofrutta e Cassa.</p>
     <div class="actions">
       <button onclick="loadDemo()">Demo</button>
       <button class="secondary" onclick="generateWeek()">Genera planning</button>
@@ -170,7 +174,7 @@ th{font-size:12px;color:var(--muted)}
   </div>
 
   <div class="grid no-print">
-    <div class="card">
+    <div class="card" id="editSection">
       <h2>5. Modifica turno</h2>
       <div id="editModeBox" class="notice" style="margin-bottom:10px">Modalità: nuovo turno</div>
       <div class="row">
@@ -194,13 +198,21 @@ th{font-size:12px;color:var(--muted)}
     </div>
   </div>
 
-  <div class="card" id="printArea">
+  <div class="card">
     <h2>7. Planning settimana</h2>
     <div class="notice" style="margin-bottom:12px"><strong>Lettura rapida:</strong> giallo = straordinario, verde = Ortofrutta, azzurro = gerenza, beige = part time.</div>
-    <div class="daygrid" id="weekGrid"></div>
+    <div class="daygrid no-print" id="weekGrid"></div>
+
+    <div id="printTableWrap">
+      <table id="printTable">
+        <thead id="printThead"></thead>
+        <tbody id="printTbody"></tbody>
+        <tfoot id="printTfoot"></tfoot>
+      </table>
+    </div>
   </div>
 
-  <div class="card">
+  <div class="card no-print">
     <h2>8. Ore giornaliere per persona</h2>
     <div class="summary-grid" id="dailyHoursGrid"></div>
   </div>
@@ -216,6 +228,7 @@ function uid(){return Math.random().toString(36).slice(2,10);}
 function shortName(emp){const last=(emp.lastName||"").trim(); return `${emp.firstName} ${last?last[0]+".":""}`.trim();}
 function displayRole(emp){if(emp.role!=="AddettoVendita") return emp.role; return emp.gender==="F"?"Addetta vendita":"Addetto vendita";}
 function rank(emp){if(emp.role==="Store Manager") return 4; if(emp.role==="Vice Store Manager") return 3; if(emp.role==="Primo Assistente"||emp.role==="Secondo Assistente") return 2; return 1;}
+function roleOrder(emp){if(emp.role==="Store Manager") return 1; if(emp.role==="Vice Store Manager") return 2; if(emp.role==="Primo Assistente") return 3; if(emp.role==="Secondo Assistente") return 4; if(emp.role==="Fruttivendolo") return 5; return 6;}
 function isManagement(emp){return rank(emp)>=2;}
 function findEmp(id){return state.employees.find(e=>e.id===id);}
 function shiftHours(start,end){const [sh,sm]=start.split(":").map(Number),[eh,em]=end.split(":").map(Number); return ((eh*60+em)-(sh*60+sm))/60;}
@@ -236,8 +249,8 @@ function defaultEmployees(){return[
 {id:uid(),firstName:"Enrico",lastName:"Dore",gender:"M",type:"PT",role:"AddettoVendita",level:"4",cost:12,dept1:"Cassa",dept2:"",notes:""}
 ];}
 function defaultState(){return{stores:DEFAULT_STORES, activeStore:DEFAULT_STORES[0].name, employees:defaultEmployees(), days:[], taskNotes:{}};}
-function loadState(){try{const raw=localStorage.getItem("md_buona_spesa_italia_fix_v3"); if(raw) return JSON.parse(raw);}catch(e){} return defaultState();}
-function saveState(){localStorage.setItem("md_buona_spesa_italia_fix_v3", JSON.stringify(state));}
+function loadState(){try{const raw=localStorage.getItem("md_buona_spesa_italia_fix_v4"); if(raw) return JSON.parse(raw);}catch(e){} return defaultState();}
+function saveState(){localStorage.setItem("md_buona_spesa_italia_fix_v4", JSON.stringify(state));}
 function saveData(){saveCurrentStoreToState(); saveState(); setStatus("Dati salvati correttamente");}
 
 function currentDepartments(){return ["Ortofrutta","Cassa"];}
@@ -406,18 +419,12 @@ function saveManualShift(){
   const shift=mkShift(empId, manualRole.value.trim()||displayRole(emp), manualDept.value, manualStart.value, manualEnd.value, {isClosure:manualClosure.value==="SI", isOvertime:manualCategory.value==="overtime"||manualCategory.value==="travel-overtime", isTravel:manualCategory.value==="travel-normal"||manualCategory.value==="travel-overtime"});
   if(editRef){
     const idx=day.shifts.findIndex(s=>s.id===editRef);
-    if(idx>=0){
-      day.shifts[idx]=Object.assign({}, shift, {id:editRef});
-      setStatus("Turno modificato correttamente");
-    } else {
-      setStatus("Turno da modificare non trovato","error");
-      return;
-    }
+    if(idx>=0){day.shifts[idx]=Object.assign({}, shift, {id:editRef});}
+    else {setStatus("Turno da modificare non trovato","error"); return;}
   } else {
     day.shifts.push(shift);
-    setStatus("Turno aggiunto correttamente");
   }
-  saveState(); renderAll(); resetManualForm();
+  saveState(); renderAll(); resetManualForm(); setStatus(editRef?"Turno modificato correttamente":"Turno aggiunto correttamente");
 }
 function editShift(dayName, shiftId){
   const day=state.days.find(d=>d.dayName===dayName), shift=day?.shifts.find(s=>s.id===shiftId);
@@ -435,7 +442,8 @@ function editShift(dayName, shiftId){
   editModeBox.className="successbox";
   editModeBox.innerHTML=`Modalità: modifica turno di <strong>${shortName(findEmp(shift.empId))}</strong> - ${dayName}`;
   saveShiftBtn.textContent="Aggiorna turno";
-  window.scrollTo({top:0, behavior:"smooth"});
+  const editSection=document.getElementById("editSection");
+  editSection.scrollIntoView({behavior:"smooth", block:"center"});
 }
 function deleteShift(dayName, shiftId){
   const day=state.days.find(d=>d.dayName===dayName); if(!day) return;
@@ -484,9 +492,16 @@ function validation(){
   return {alerts, blocking};
 }
 
+function sortedEmployees(){
+  return state.employees.slice().sort((a,b)=>{
+    const ro=roleOrder(a)-roleOrder(b);
+    if(ro!==0) return ro;
+    return shortName(a).localeCompare(shortName(b));
+  });
+}
 function renderEmployees(){
   const tbody=document.querySelector("#empTable tbody"); tbody.innerHTML="";
-  state.employees.slice().sort((a,b)=>shortName(a).localeCompare(shortName(b))).forEach(emp=>{
+  sortedEmployees().forEach(emp=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><strong>${shortName(emp)}</strong></td><td>${displayRole(emp)}</td><td>${emp.type}</td><td>${emp.level}</td><td>${fmt(emp.cost)} €</td><td>${[emp.dept1, emp.dept2].filter(Boolean).join(" / ")||"-"}</td><td><button class="ghost" onclick='removeEmployee(${JSON.stringify(emp.id)})'>Elimina</button></td>`;
     tbody.appendChild(tr);
@@ -540,11 +555,47 @@ function renderDailyHours(){
     box.innerHTML=html; el.appendChild(box);
   });
 }
+function renderPrintTable(){
+  const emps=sortedEmployees();
+  let thead='<tr><th class="namecol">Dipendente</th>';
+  DAYS.forEach(d=>thead+=`<th>${d}</th>`);
+  thead+='<th>Totale sett.</th><th>Trasferta</th></tr>';
+  printThead.innerHTML=thead;
+
+  let tbody='';
+  emps.forEach(emp=>{
+    let total=0, travel=0;
+    tbody+=`<tr><td class="namecol"><strong>${shortName(emp)}</strong><br><span style="font-size:10px">${displayRole(emp)}</span></td>`;
+    DAYS.forEach(dayName=>{
+      const day=state.days.find(d=>d.dayName===dayName);
+      const shifts=(day?.shifts||[]).filter(s=>s.empId===emp.id);
+      if(!shifts.length){
+        const status=empStatus(dayName, emp.id);
+        tbody+=`<td>${status==="IN_TURNO"?"Riposo":status}</td>`;
+      } else {
+        const parts=shifts.map(s=>{
+          const h=shiftHours(s.start,s.end);
+          total+=h;
+          if(s.isTravel) travel+=h;
+          return `${s.start}-${s.end}${s.dept?`<br>${s.dept}`:""}${s.isTravel?"<br>Trasf.":""}`;
+        }).join('<hr style="border:none;border-top:1px solid #ddd;margin:2px 0">');
+        tbody+=`<td>${parts}</td>`;
+      }
+    });
+    tbody+=`<td><strong>${fmt(total)} h</strong></td><td>${travel>0?fmt(travel)+" h":"-"}</td></tr>`;
+  });
+  printTbody.innerHTML=tbody;
+
+  const week=weeklySummary();
+  const travelWeek=state.days.reduce((acc,d)=>acc + d.shifts.filter(s=>s.isTravel).reduce((a,s)=>a+shiftHours(s.start,s.end),0),0);
+  printTfoot.innerHTML=`<tr><td class="namecol" colspan="8" style="text-align:right"><strong>Totale settimanale</strong></td><td><strong>${fmt(week.worked)} h</strong></td><td><strong>${travelWeek>0?fmt(travelWeek)+" h":"-"}</strong></td></tr>`;
+}
 function renderKpi(){
   const week=weeklySummary(), costs=weeklyCosts(), v=validation();
   kpiCostWeek.textContent=`${fmt(costs.total)} €`; kpiCostOrd.textContent=`${fmt(costs.ordinaryCost)} €`; kpiCostOt.textContent=`${fmt(costs.otCost)} €`; kpiCostExt.textContent=`${fmt(costs.extCost)} €`; kpiRealProd.textContent=`${fmt(week.worked>0?Number(weeklyForecast.value||0)/week.worked:0)} €/h`; kpiOrdinaryHours.textContent=`${fmt(week.ordinary)} h`;
   alertsList.innerHTML=v.alerts.length?v.alerts.map(a=>`<li>${a}</li>`).join(""):"<li>Nessun alert aggiuntivo</li>";
   blockingBox.innerHTML=v.blocking.length?`<div class="errorbox"><strong>Blocco planning:</strong><br>${v.blocking.join("<br>")}</div>`:`<div class="notice">Planning valido sul vincolo di gerenza.</div>`;
+  renderPrintTable();
 }
 function exportJSON(){
   saveCurrentStoreToState();
@@ -554,15 +605,23 @@ function exportJSON(){
 function exportCSV(){
   const v=validation();
   if(v.blocking.length){setStatus("Export bloccato: manca copertura di gerenza.","error"); return;}
-  let csv="Giorno,Nome,Ruolo,Reparto,Inizio,Fine,Ore,Stato,Compito,CostoStimato\n";
-  state.days.forEach(day=>day.shifts.forEach(s=>{
-    const emp=findEmp(s.empId), h=shiftHours(s.start,s.end), task=state.taskNotes[taskKey(day.dayName,s.empId)];
-    let cost=0;
-    if(emp?.type==="EXT") cost=h*Number(costEXT.value||0);
-    else if(s.isOvertime||s.isTravel) cost=h*Number(costOT.value||0);
-    else cost=h*Number(emp?.cost||0);
-    csv += [day.dayName, shortName(emp), displayRole(emp), s.dept||"", s.start, s.end, h.toFixed(2), task?.status||"IN_TURNO", (task?.text||"").replace(/,/g,";"), cost.toFixed(2)].join(",")+"\n";
-  }));
+  let csv="Dipendente,Ruolo,Lunedì,Martedì,Mercoledì,Giovedì,Venerdì,Sabato,Domenica,Totale settimana,Trasferta\n";
+  sortedEmployees().forEach(emp=>{
+    let row=[shortName(emp),displayRole(emp)], total=0, travel=0;
+    DAYS.forEach(dayName=>{
+      const day=state.days.find(d=>d.dayName===dayName);
+      const shifts=(day?.shifts||[]).filter(s=>s.empId===emp.id);
+      if(!shifts.length){row.push(empStatus(dayName, emp.id)==="IN_TURNO"?"Riposo":empStatus(dayName, emp.id));}
+      else{
+        row.push(shifts.map(s=>{
+          const h=shiftHours(s.start,s.end); total+=h; if(s.isTravel) travel+=h;
+          return `${s.start}-${s.end} ${s.dept||""}`.trim();
+        }).join(" | "));
+      }
+    });
+    row.push(total.toFixed(2), travel.toFixed(2));
+    csv += row.map(x=>String(x).replace(/,/g,';')).join(",")+"\n";
+  });
   const blob=new Blob([csv], {type:"text/csv;charset=utf-8;"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="md_buona_spesa_italia.csv"; a.click();
 }
 function loadDemo(){state=defaultState(); saveState(); renderAll(); generateWeek(); setStatus("Demo caricata");}
