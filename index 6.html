@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Md Buona Spesa Italia - Semplice Definitivo v2</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f4f6fb;color:#1f2937}
+.wrap{max-width:1400px;margin:12px auto;padding:12px}
+.card{background:#fff;border:1px solid #d9deea;border-radius:12px;padding:12px;margin-bottom:12px}
+h1{margin:0 0 6px;font-size:26px}
+.small{font-size:13px;color:#6b7280}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+label{display:block;font-size:12px;color:#6b7280;margin-bottom:4px}
+select,button{padding:10px;border-radius:8px;border:1px solid #d9deea;font:inherit}
+button{background:#1f4e78;color:#fff;border:none;cursor:pointer}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #d9deea;padding:8px;font-size:13px;vertical-align:top}
+th{background:#eef2f7}
+.notice{padding:10px;border:1px solid #d9deea;border-radius:10px;background:#f8fafc}
+.ok{padding:10px;border:1px solid #bbf7d0;border-radius:10px;background:#f0fdf4;color:#166534}
+.err{padding:10px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#b91c1c}
+.center{text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Md Buona Spesa Italia</h1>
+    <div class="small">Versione semplice e corretta: scegli la settimana e premi <strong>Genera planning</strong>.</div>
+    <div class="actions" style="margin-top:10px">
+      <div>
+        <label>Settimana del mese</label>
+        <select id="weekNum">
+          <option value="1">Settimana 1</option>
+          <option value="2">Settimana 2</option>
+          <option value="3">Settimana 3</option>
+          <option value="4">Settimana 4</option>
+          <option value="5">Settimana 5</option>
+        </select>
+      </div>
+      <button id="genBtn">Genera planning</button>
+    </div>
+    <div id="status" class="small" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <div class="notice">
+      Regole applicate:
+      <br>• 3 di mattina
+      <br>• 2 di pomeriggio
+      <br>• 3 di sera, di cui uno va via alle 20:30
+      <br>• 1 gerente apertura e 1 gerente chiusura
+      <br>• 1 solo gerente di riposo al giorno
+      <br>• Bruno e Mariagrazia riposano solo giovedì, venerdì o domenica e mai insieme
+      <br>• gerente apertura: 06:30–07:30 in straordinario
+    </div>
+  </div>
+
+  <div id="validationBox"></div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Tabella turni</h3>
+    <div id="tableBox" class="small">Premi “Genera planning”.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const DAYS = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+  const EMP = {
+    bruno: "Alampo Bruno",
+    maria: "Mariagrazia Centamore",
+    vincenzo: "Vincenzo La Delta",
+    deborah: "Deborah D'anna",
+    pier: "Viglianisi Pierpaolo",
+    gio: "Giovanna Licciardello",
+    santa: "Santa Scandurra"
+  };
+
+  function setStatus(t){ document.getElementById("status").textContent = t; }
+
+  function managerRestMap(week){
+    if(week % 2 === 1){
+      return {
+        "Lun": EMP.vincenzo,
+        "Mar": EMP.deborah,
+        "Mer": EMP.vincenzo,
+        "Gio": EMP.bruno,
+        "Ven": EMP.maria,
+        "Sab": EMP.deborah,
+        "Dom": EMP.bruno
+      };
+    }
+    return {
+      "Lun": EMP.deborah,
+      "Mar": EMP.vincenzo,
+      "Mer": EMP.deborah,
+      "Gio": EMP.maria,
+      "Ven": EMP.bruno,
+      "Sab": EMP.vincenzo,
+      "Dom": EMP.maria
+    };
+  }
+
+  function staffRestMap(week){
+    const maps = {
+      1: {"Lun": EMP.santa, "Mer": EMP.pier, "Sab": EMP.gio},
+      2: {"Mar": EMP.gio, "Gio": EMP.pier, "Dom": EMP.santa},
+      3: {"Lun": EMP.gio, "Ven": EMP.pier, "Sab": EMP.santa},
+      4: {"Mar": EMP.santa, "Mer": EMP.gio, "Dom": EMP.pier},
+      5: {"Lun": EMP.pier, "Gio": EMP.santa, "Sab": EMP.gio}
+    };
+    return maps[week] || maps[1];
+  }
+
+  function availableManagers(restName){
+    return [EMP.bruno, EMP.maria, EMP.vincenzo, EMP.deborah].filter(function(x){ return x !== restName; });
+  }
+
+  function renderValidation(issues){
+    const box = document.getElementById("validationBox");
+    if(issues.length){
+      box.innerHTML = '<div class="err">' + issues.join("<br>") + '</div>';
+    } else {
+      box.innerHTML = '<div class="ok">Planning generato con struttura completa.</div>';
+    }
+  }
+
+  function renderTable(rows){
+    const box = document.getElementById("tableBox");
+    if(!rows.length){
+      box.innerHTML = "Nessun dato.";
+      return;
+    }
+    let html = '<table><thead><tr><th>Giorno</th><th>Riposi</th><th>Mattina (3)</th><th>Pomeriggio (2)</th><th>Sera (3)</th><th>Supporto gerente</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      html += '<tr>'
+        + '<td class="center"><strong>' + r.day + '</strong></td>'
+        + '<td>' + r.riposi + '</td>'
+        + '<td>' + r.mattina + '</td>'
+        + '<td>' + r.pomeriggio + '</td>'
+        + '<td>' + r.sera + '</td>'
+        + '<td>' + r.supporto + '</td>'
+        + '</tr>';
+    });
+    html += '</tbody></table>';
+    box.innerHTML = html;
+  }
+
+  function generateWeek(){
+    const week = Number(document.getElementById("weekNum").value || 1);
+    const mRest = managerRestMap(week);
+    const sRest = staffRestMap(week);
+    const rows = [];
+    const issues = [];
+
+    DAYS.forEach(function(day){
+      const mgrAvail = availableManagers(mRest[day]);
+      if(mgrAvail.length !== 3){
+        issues.push(day + ": copertura gerenti errata");
+        return;
+      }
+
+      const openMgr = mgrAvail[0];
+      const closeMgr = mgrAvail[1];
+      const supportMgr = mgrAvail[2];
+
+      const restedStaff = sRest[day] || "-";
+      const fruit = restedStaff === EMP.pier ? EMP.gio : EMP.pier;
+
+      let venditaPool = [EMP.gio, EMP.santa].filter(function(x){ return x !== restedStaff && x !== fruit; });
+      if(!venditaPool.length) venditaPool = [supportMgr];
+      if(venditaPool.length === 1) venditaPool = [venditaPool[0], supportMgr, venditaPool[0]];
+      if(venditaPool.length === 2) venditaPool = [venditaPool[0], venditaPool[1], supportMgr];
+
+      const jolly = venditaPool[0];
+      const pomeriggio = venditaPool[1];
+      const sera2030 = venditaPool[1];
+      const sera2115 = venditaPool[2];
+
+      rows.push({
+        day: day,
+        riposi: mRest[day] + "<br>" + restedStaff,
+        mattina: [
+          openMgr + " 06:30-14:00 (OT 06:30-07:30)",
+          fruit + ((day === "Lun" || day === "Mar") ? " 06:30-13:00" : " 07:00-13:15"),
+          jolly + " 07:30-17:15"
+        ].join("<br>"),
+        pomeriggio: [
+          closeMgr + " 14:00-21:15",
+          pomeriggio + " 14:00-17:15"
+        ].join("<br>"),
+        sera: [
+          closeMgr + " 14:00-21:15",
+          sera2030 + " 17:15-20:30",
+          sera2115 + " 17:30-21:15"
+        ].join("<br>"),
+        supporto: supportMgr
+      });
+    });
+
+    renderValidation(issues);
+    renderTable(rows);
+    setStatus("Settimana " + week + " generata");
+  }
+
+  document.getElementById("genBtn").addEventListener("click", generateWeek);
+})();
+</script>
+</body>
+</html>
