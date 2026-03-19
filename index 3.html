@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Md Buona Spesa Italia – Operativa v7</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f4f6fb;color:#1f2937}
+.wrap{max-width:1600px;margin:10px auto;padding:10px}
+.card{background:#fff;padding:12px;border-radius:12px;margin-bottom:10px;border:1px solid #d9deea}
+button,input,select{padding:10px;border-radius:8px;border:1px solid #d9deea;font:inherit}
+button{background:#1f4e78;color:#fff;border:none;cursor:pointer}
+.ghost{background:#fff;color:#1f2937;border:1px solid #d9deea}
+.row{display:grid;grid-template-columns:repeat(12,1fr);gap:8px}
+.f{grid-column:span 3}.w6{grid-column:span 6}.full{grid-column:span 12}
+label{display:block;font-size:12px;color:#6b7280;margin-bottom:4px}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #d9deea;padding:8px;text-align:left;font-size:13px;vertical-align:top}
+th{background:#eef2f7}
+.small{font-size:13px;color:#6b7280}
+.notice{padding:10px;background:#f8fafc;border:1px solid #d9deea;border-radius:10px}
+.err{padding:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#b91c1c}
+.ok{padding:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;color:#166534}
+.center{text-align:center}
+.badge{display:inline-block;padding:2px 6px;border-radius:999px;background:#eef2ff;font-size:11px;margin-top:4px}
+@media (max-width:1100px){.f,.w6,.full{grid-column:span 12}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h2>Md Buona Spesa Italia – Operativa v7</h2>
+    <div class="small">Versione più stabile: sostituzioni automatiche per ruolo/reparto/contratto, con fallback a straordinario sullo stesso contratto.</div>
+    <div class="row" style="margin-top:10px">
+      <div class="f"><label>Settimana del mese</label><select id="weekNum">
+        <option value="1">Settimana 1</option>
+        <option value="2">Settimana 2</option>
+        <option value="3">Settimana 3</option>
+        <option value="4">Settimana 4</option>
+        <option value="5">Settimana 5</option>
+      </select></div>
+      <div class="full">
+        <button onclick="generaSettimana()">Genera settimana</button>
+        <button class="ghost" onclick="salva()">Salva</button>
+      </div>
+    </div>
+    <div id="status" class="small" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <h3>Dipendenti</h3>
+    <div class="row">
+      <div class="f"><label>Nome</label><input id="firstName"></div>
+      <div class="f w6"><label>Cognome</label><input id="lastName"></div>
+      <div class="f"><label>Contratto</label>
+        <select id="contract">
+          <option value="FT">Full time</option>
+          <option value="PT">Part time</option>
+        </select>
+      </div>
+      <div class="f"><label>Ruolo</label>
+        <select id="role">
+          <option value="Store Manager">Store Manager</option>
+          <option value="Vice Store Manager">Vice Store Manager</option>
+          <option value="Primo Assistente">Primo Assistente</option>
+          <option value="Secondo Assistente">Secondo Assistente</option>
+          <option value="Fruttivendolo">Fruttivendolo</option>
+          <option value="Addetto vendita">Addetto vendita</option>
+          <option value="Addetta vendita">Addetta vendita</option>
+        </select>
+      </div>
+      <div class="full"><button onclick="aggiungiDipendente()">Aggiungi dipendente</button></div>
+    </div>
+    <table id="tabellaDipendenti">
+      <thead><tr><th>Nome</th><th>Ruolo</th><th>Contratto</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Assenze / ferie settimana selezionata</h3>
+    <div class="row">
+      <div class="f"><label>Giorno</label><select id="absenceDay"></select></div>
+      <div class="f w6"><label>Dipendente</label><select id="absenceEmployee"></select></div>
+      <div class="f"><label>Stato</label><select id="absenceType">
+        <option value="FERIE">Ferie</option>
+        <option value="MALATTIA">Malattia</option>
+        <option value="ROL">ROL</option>
+        <option value="ALTRO">Altro</option>
+      </select></div>
+      <div class="f"><label>Sostituzione</label><select id="replaceMode">
+        <option value="MANUALE_OT">Straordinario manuale</option>
+        <option value="AUTO_MATCH">Sostituzione automatica</option>
+      </select></div>
+      <div class="full"><button onclick="aggiungiAssenza()">Aggiungi assenza</button></div>
+    </div>
+    <table id="tabellaAssenze">
+      <thead><tr><th>Giorno</th><th>Dipendente</th><th>Stato</th><th>Sostituzione</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Regole attive</h3>
+    <div class="notice">
+      Mattina: gerente apertura + ortofrutta + jolly continuato.<br>
+      Pomeriggio: gerente chiusura + 14:00–17:15.<br>
+      Sera: gerente chiusura + 17:15–20:30 + 17:30–21:15.<br>
+      Gerente apertura: <strong>06:30–07:30 straordinario</strong>.<br>
+      Pause: FT 15 minuti se turno almeno 6 ore, PT 15 minuti se turno almeno 2 ore, massimo una pausa.<br>
+      Sostituzione automatica stabile:<br>
+      • gerente → gerente<br>
+      • ortofrutta → fruttivendolo / risorsa abilitata ortofrutta<br>
+      • addetto vendita → addetto vendita<br>
+      • stesso contratto prima, poi stesso contratto + straordinario<br>
+      • se non trova copertura valida, segnala intervento manuale
+    </div>
+    <div id="validationBox" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h3>Tabella turni settimana</h3>
+    <div id="tabellaTurniBox"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "md_buona_spesa_operativa_v7";
+const giorni = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+let state = loadState();
+
+function id(){ return Math.random().toString(36).slice(2,10); }
+function defaultEmployees(){
+  return [
+    {id:id(), firstName:"Alampo", lastName:"Bruno", role:"Store Manager", contract:"FT"},
+    {id:id(), firstName:"Mariagrazia", lastName:"Centamore", role:"Vice Store Manager", contract:"FT"},
+    {id:id(), firstName:"Vincenzo", lastName:"La Delta", role:"Primo Assistente", contract:"FT"},
+    {id:id(), firstName:"Deborah", lastName:"D'anna", role:"Secondo Assistente", contract:"PT"},
+    {id:id(), firstName:"Viglianisi", lastName:"Pierpaolo", role:"Fruttivendolo", contract:"FT"},
+    {id:id(), firstName:"Giovanna", lastName:"Licciardello", role:"Addetta vendita", contract:"PT"},
+    {id:id(), firstName:"Santa", lastName:"Scandurra", role:"Addetta vendita", contract:"PT"}
+  ];
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { employees: defaultEmployees(), planningByWeek: {}, absencesByWeek: {} };
+}
+function salva(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); setStatus("Dati salvati"); }
+function setStatus(t){ document.getElementById("status").textContent = t; }
+function fullName(e){ return e.firstName + " " + e.lastName; }
+function manageri(){ return state.employees.filter(e => ["Store Manager","Vice Store Manager","Primo Assistente","Secondo Assistente"].includes(e.role)); }
+function fruitWorkers(){ return state.employees.filter(e => e.role === "Fruttivendolo" || e.firstName === "Giovanna"); }
+function salesWorkers(){ return state.employees.filter(e => e.role === "Addetto vendita" || e.role === "Addetta vendita" || ["Store Manager","Vice Store Manager","Primo Assistente","Secondo Assistente"].includes(e.role)); }
+function ore(start,end){
+  const [a,b]=start.split(":").map(Number), [c,d]=end.split(":").map(Number);
+  return ((c*60+d)-(a*60+b))/60;
+}
+function pauseText(emp, time){
+  if(!time.includes("-")) return "";
+  const h = ore(time.split("-")[0], time.split("-")[1]);
+  if(emp.contract==="FT" && h>=6) return " + pausa 15m";
+  if(emp.contract==="PT" && h>=2) return " + pausa 15m";
+  return "";
+}
+function employeeFamily(emp){
+  if(["Store Manager","Vice Store Manager","Primo Assistente","Secondo Assistente"].includes(emp.role)) return "GERENTE";
+  if(emp.role==="Fruttivendolo" || emp.firstName==="Giovanna") return "ORTO";
+  if(emp.role==="Addetto vendita" || emp.role==="Addetta vendita") return "VENDITA";
+  return emp.role;
+}
+function slotFamily(slotKey){
+  if(["apertura","chiusura","supporto"].includes(slotKey)) return "GERENTE";
+  if(slotKey==="ortofrutta") return "ORTO";
+  return "VENDITA";
+}
+function renderDipendenti(){
+  const tbody = document.querySelector("#tabellaDipendenti tbody");
+  tbody.innerHTML = "";
+  state.employees.forEach(emp => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${fullName(emp)}</td><td>${emp.role}</td><td>${emp.contract}</td><td><button onclick="eliminaDipendente('${emp.id}')">Elimina</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+function populateAbsenceSelectors(){
+  document.getElementById("absenceDay").innerHTML = giorni.map(g => `<option value="${g}">${g}</option>`).join("");
+  document.getElementById("absenceEmployee").innerHTML = state.employees.map(e => `<option value="${e.id}">${fullName(e)}</option>`).join("");
+}
+function aggiungiDipendente(){
+  const fn = document.getElementById("firstName").value.trim();
+  const ln = document.getElementById("lastName").value.trim();
+  const role = document.getElementById("role").value;
+  const contract = document.getElementById("contract").value;
+  if(!fn || !ln){ setStatus("Inserisci nome e cognome"); return; }
+  state.employees.push({id:id(), firstName:fn, lastName:ln, role, contract});
+  salva(); renderDipendenti(); populateAbsenceSelectors();
+  document.getElementById("firstName").value = "";
+  document.getElementById("lastName").value = "";
+  setStatus("Dipendente aggiunto");
+}
+function eliminaDipendente(empId){
+  state.employees = state.employees.filter(e => e.id !== empId);
+  salva(); renderDipendenti(); populateAbsenceSelectors(); renderPlanningTable(); renderValidation(); renderAbsences();
+  setStatus("Dipendente eliminato");
+}
+function getWeekNumber(){ return Number(document.getElementById("weekNum").value || 1); }
+function weekAbsences(){
+  const key = String(getWeekNumber());
+  if(!state.absencesByWeek[key]) state.absencesByWeek[key] = [];
+  return state.absencesByWeek[key];
+}
+function isAbsent(empId, day){ return weekAbsences().find(a => a.empId===empId && a.day===day); }
+function aggiungiAssenza(){
+  const arr = weekAbsences();
+  const day = document.getElementById("absenceDay").value;
+  const empId = document.getElementById("absenceEmployee").value;
+  const type = document.getElementById("absenceType").value;
+  const mode = document.getElementById("replaceMode").value;
+  if(arr.find(a => a.empId===empId && a.day===day)){ setStatus("Assenza già presente per quel giorno"); return; }
+  arr.push({id:id(), day, empId, type, mode});
+  salva(); renderAbsences(); setStatus("Assenza aggiunta");
+}
+function eliminaAssenza(absId){
+  const key = String(getWeekNumber());
+  state.absencesByWeek[key] = weekAbsences().filter(a => a.id !== absId);
+  salva(); renderAbsences(); setStatus("Assenza eliminata");
+}
+function renderAbsences(){
+  const tbody = document.querySelector("#tabellaAssenze tbody");
+  tbody.innerHTML = "";
+  weekAbsences().forEach(a => {
+    const e = state.employees.find(x => x.id===a.empId);
+    tbody.innerHTML += `<tr><td>${a.day}</td><td>${e ? fullName(e) : "-"}</td><td>${a.type}</td><td>${a.mode==="AUTO_MATCH"?"Sostituzione automatica":"Straordinario manuale"}</td><td><button onclick="eliminaAssenza('${a.id}')">Elimina</button></td></tr>`;
+  });
+}
+function generaRiposiSettimanali(week){
+  const mgr = manageri();
+  const bruno = mgr.find(m => m.firstName === "Alampo" && m.lastName === "Bruno");
+  const maria = mgr.find(m => m.firstName === "Mariagrazia" && m.lastName === "Centamore");
+  const vincenzo = mgr.find(m => m.firstName === "Vincenzo");
+  const deborah = mgr.find(m => m.firstName === "Deborah");
+  const pier = state.employees.find(e => e.firstName === "Viglianisi");
+  const gio = state.employees.find(e => e.firstName === "Giovanna");
+  const santa = state.employees.find(e => e.firstName === "Santa");
+  const managerRestSpecial = week % 2 === 1 ? {"Gio": bruno, "Ven": maria, "Dom": deborah} : {"Gio": maria, "Ven": deborah, "Dom": bruno};
+  const extraRestMap = week % 2 === 1 ? {"Lun": vincenzo, "Mar": santa, "Mer": pier, "Sab": gio} : {"Lun": deborah, "Mar": gio, "Mer": vincenzo, "Sab": santa};
+  return {managerRestSpecial, extraRestMap};
+}
+function pickLeastUsed(candidates, counts, key, offset){
+  const arr = candidates.slice().sort((a,b)=>{
+    const av = counts[a.id]?.[key] || 0, bv = counts[b.id]?.[key] || 0;
+    if(av !== bv) return av - bv;
+    return (a.firstName+a.lastName).localeCompare(b.firstName+b.lastName);
+  });
+  return arr.length ? arr[offset % arr.length] : null;
+}
+function stableReplacement(absEmp, day, usedIds, slotKey){
+  const family = slotFamily(slotKey);
+  const pool = state.employees.filter(e => e.id !== absEmp.id && !usedIds.includes(e.id) && !isAbsent(e.id, day));
+  const familyPool = pool.filter(e => employeeFamily(e) === family);
+  const sameContractFamily = familyPool.filter(e => e.contract === absEmp.contract);
+
+  if(sameContractFamily.length){
+    return {emp:sameContractFamily[0], note:"sostituzione automatica stesso ruolo/contratto"};
+  }
+  if(familyPool.length){
+    const sameContractAny = pool.filter(e => e.contract === absEmp.contract);
+    if(sameContractAny.length){
+      return {emp:sameContractAny[0], note:"stesso contratto + straordinario"};
+    }
+    return {emp:familyPool[0], note:"stesso ruolo/famiglia"};
+  }
+  const sameContractPool = pool.filter(e => e.contract === absEmp.contract);
+  if(sameContractPool.length){
+    return {emp:sameContractPool[0], note:"stesso contratto + straordinario"};
+  }
+  return null;
+}
+function generaSettimana(){
+  const mgr = manageri(), fruit = fruitWorkers(), workers = salesWorkers();
+  if(mgr.length < 4){ setStatus("Servono 4 gerenti"); return; }
+  if(fruit.length < 1){ setStatus("Serve almeno 1 risorsa ortofrutta"); return; }
+  if(workers.length < 4){ setStatus("Servono almeno 4 risorse per coprire cassa/jolly/sera"); return; }
+
+  const week = getWeekNumber();
+  const {managerRestSpecial, extraRestMap} = generaRiposiSettimanali(week);
+  const counts = {};
+  state.employees.forEach(e => { counts[e.id] = {open:0, close:0, fruit:0, jolly:0, eve2030:0, eve2115:0, rest:0}; });
+  const planning = [];
+
+  giorni.forEach((g, idx) => {
+    let riposo = extraRestMap[g];
+    if(managerRestSpecial[g]) riposo = managerRestSpecial[g];
+
+    const available = state.employees.filter(e => (!riposo || e.id !== riposo.id) && !isAbsent(e.id, g));
+    const availableMgr = available.filter(e => employeeFamily(e)==="GERENTE");
+    if(availableMgr.length < 3){ setStatus("Errore: meno di 3 gerenti disponibili in " + g); return; }
+
+    const openMgr = pickLeastUsed(availableMgr, counts, "open", week + idx);
+    const remainingAfterOpen = availableMgr.filter(e => e.id !== openMgr.id);
+    const closeMgr = pickLeastUsed(remainingAfterOpen, counts, "close", week + idx + 1);
+    const supportMgr = remainingAfterOpen.find(e => e.id !== closeMgr.id);
+
+    const availableNoManagers = available.filter(e => ![openMgr.id, closeMgr.id, supportMgr.id].includes(e.id));
+    const fruitCand = availableNoManagers.filter(e => employeeFamily(e)==="ORTO");
+    const fruitEmp = pickLeastUsed(fruitCand, counts, "fruit", week + idx) || fruitCand[0];
+
+    const used = [openMgr.id, closeMgr.id, supportMgr.id];
+    if(fruitEmp) used.push(fruitEmp.id);
+
+    const remaining = available.filter(e => !used.includes(e.id));
+    const vendita = remaining.filter(e => employeeFamily(e)==="VENDITA");
+    const jolly = pickLeastUsed(vendita.length ? vendita : remaining, counts, "jolly", week + idx) || remaining[0];
+    const remaining2 = remaining.filter(e => !jolly || e.id !== jolly.id);
+    const vendita2 = remaining2.filter(e => employeeFamily(e)==="VENDITA");
+    const eve2030 = pickLeastUsed(vendita2.length ? vendita2 : remaining2, counts, "eve2030", week + idx + 1) || remaining2[0];
+    const remaining3 = remaining2.filter(e => !eve2030 || e.id !== eve2030.id);
+    const vendita3 = remaining3.filter(e => employeeFamily(e)==="VENDITA");
+    const eve2115 = pickLeastUsed(vendita3.length ? vendita3 : remaining3, counts, "eve2115", week + idx + 2) || remaining3[0] || supportMgr;
+
+    const slots = {
+      apertura: {emp: fullName(openMgr), empId: openMgr.id, time: "06:30-14:00", note:"06:30-07:30 straordinario"},
+      ortofrutta: {emp: fullName(fruitEmp), empId: fruitEmp.id, time: (g==="Lun"||g==="Mar") ? "06:30-13:00" : "07:00-13:15"},
+      jolly: {emp: fullName(jolly), empId: jolly.id, time: "07:30-17:15"},
+      chiusura: {emp: fullName(closeMgr), empId: closeMgr.id, time: "14:00-21:15"},
+      sera2030: {emp: fullName(eve2030), empId: eve2030.id, time: "17:15-20:30"},
+      sera2115: {emp: fullName(eve2115), empId: eve2115.id, time: "17:30-21:15"},
+      supporto: {emp: fullName(supportMgr), empId: supportMgr.id, time: "Supporto gerente"}
+    };
+
+    weekAbsences().filter(a => a.day===g).forEach(a => {
+      const absentEmp = state.employees.find(e => e.id===a.empId);
+      Object.keys(slots).forEach(k => {
+        if(slots[k].empId===a.empId){
+          if(a.mode==="AUTO_MATCH"){
+            const repl = stableReplacement(absentEmp, g, Object.values(slots).map(s => s.empId).filter(Boolean), k);
+            if(repl){
+              slots[k] = {emp: fullName(repl.emp), empId: repl.emp.id, time: slots[k].time, note: a.type + " - " + repl.note};
+            } else {
+              slots[k].note = a.type + " da coprire manualmente";
+            }
+          } else {
+            slots[k].note = a.type + " da ripartire manualmente in straordinario";
+          }
+        }
+      });
+    });
+
+    if(riposo && counts[riposo.id]) counts[riposo.id].rest += 1;
+    [openMgr, closeMgr, fruitEmp, jolly, eve2030, eve2115].forEach((e, i) => {
+      if(!e || !counts[e.id]) return;
+      if(i===0) counts[e.id].open += 1;
+      if(i===1) counts[e.id].close += 1;
+      if(i===2) counts[e.id].fruit += 1;
+      if(i===3) counts[e.id].jolly += 1;
+      if(i===4) counts[e.id].eve2030 += 1;
+      if(i===5) counts[e.id].eve2115 += 1;
+    });
+
+    planning.push({ giorno:g, riposo: fullName(riposo), riposoId: riposo.id, slots });
+  });
+
+  state.planningByWeek[String(week)] = planning;
+  salva();
+  renderPlanningTable();
+  renderValidation();
+  renderAbsences();
+  setStatus("Settimana " + week + " generata");
+}
+function employeeDayText(empName, day){
+  if(!day) return "";
+  const emp = state.employees.find(e => fullName(e)===empName);
+  if(day.riposo === empName) return "RIPOSO";
+  if(emp && isAbsent(emp.id, day.giorno) && !Object.values(day.slots).some(s => s.emp === empName)) return isAbsent(emp.id, day.giorno).type;
+  const out = [];
+  Object.keys(day.slots).forEach(k => {
+    const s = day.slots[k];
+    if(s.emp === empName){
+      let txt = s.time;
+      if(s.time.includes("-")) txt += pauseText(emp, s.time);
+      if(s.note) txt += "<br><span class='badge'>"+s.note+"</span>";
+      out.push(txt);
+    }
+  });
+  return out.join("<br>") || "-";
+}
+function totalHoursForEmployee(empName, planning){
+  let total = 0;
+  planning.forEach(day => {
+    if(day.riposo === empName) return;
+    Object.keys(day.slots).forEach(k => {
+      const s = day.slots[k];
+      if(s.emp === empName && s.time.includes("-")){
+        const parts = s.time.split("-");
+        total += ore(parts[0], parts[1]);
+      }
+    });
+  });
+  return total;
+}
+function renderPlanningTable(){
+  const box = document.getElementById("tabellaTurniBox");
+  const planning = state.planningByWeek[String(getWeekNumber())] || [];
+  if(!planning.length){
+    box.innerHTML = '<div class="small">Premi “Genera settimana” per vedere la tabella completa.</div>';
+    return;
+  }
+  let html = "<table><thead><tr><th>Dipendente</th>";
+  giorni.forEach(g => html += `<th class="center">${g}</th>`);
+  html += "<th class='center'>Totale ore</th></tr></thead><tbody>";
+  state.employees.forEach(emp => {
+    const name = fullName(emp);
+    html += `<tr><td><strong>${name}</strong><br><span class="small">${emp.role} - ${emp.contract}</span></td>`;
+    giorni.forEach(g => {
+      const day = planning.find(d => d.giorno === g);
+      html += `<td>${employeeDayText(name, day)}</td>`;
+    });
+    html += `<td class="center"><strong>${totalHoursForEmployee(name, planning).toFixed(2)} h</strong></td></tr>`;
+  });
+  const weekTotal = state.employees.reduce((acc, e) => acc + totalHoursForEmployee(fullName(e), planning), 0);
+  html += `</tbody><tfoot><tr><th>Totale settimana</th><th colspan="7" class="center">Target 248 h / Generato ${weekTotal.toFixed(2)} h</th><th class="center">${weekTotal.toFixed(2)} h</th></tr></tfoot></table>`;
+  box.innerHTML = html;
+}
+function renderValidation(){
+  const box = document.getElementById("validationBox");
+  const planning = state.planningByWeek[String(getWeekNumber())] || [];
+  if(!planning.length){ box.innerHTML = ""; return; }
+  const issues = [];
+  planning.forEach(day => {
+    if(!day.riposo) issues.push(day.giorno + ": manca riposo");
+    if(!day.slots.apertura.emp) issues.push(day.giorno + ": manca apertura gerente");
+    if(!day.slots.chiusura.emp) issues.push(day.giorno + ": manca chiusura gerente");
+  });
+  const weekTotal = state.employees.reduce((acc, e) => acc + totalHoursForEmployee(fullName(e), planning), 0);
+  if(weekTotal < 248) issues.push("Totale settimanale sotto 248 h");
+  if(weekTotal > 248) issues.push("Totale settimanale sopra 248 h");
+  box.innerHTML = issues.length ? '<div class="err">'+issues.join("<br>")+'</div>' : '<div class="ok">Planning coerente con struttura, pause e sostituzioni stabili.</div>';
+}
+renderDipendenti();
+populateAbsenceSelectors();
+renderAbsences();
+renderPlanningTable();
+renderValidation();
+</script>
+</body>
+</html>
