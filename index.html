@@ -3,40 +3,469 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Turni - Md Buona Spesa</title>
+<title>Md Buona Spesa Italia - Stabile</title>
+<link rel="manifest" href="manifest.webmanifest">
 <style>
-body{font-family:Arial;margin:0;background:#f4f6fb}
-.wrap{padding:15px}
-button{padding:12px;margin:5px 0;width:100%;border:none;border-radius:10px;background:#1f4e78;color:#fff;font-size:16px}
-.card{background:#fff;padding:10px;border-radius:10px;margin-top:10px}
+:root{--bg:#f4f6fb;--card:#fff;--line:#d9deea;--text:#1f2937;--muted:#6b7280;--accent:#1f4e78;--ok:#166534;--err:#b91c1c}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:1800px;margin:16px auto;padding:0 12px 24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+h1{margin:0 0 6px;font-size:28px} h2{margin:0 0 10px;font-size:18px} h3{margin:0 0 8px;font-size:15px}
+.small{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+.row{display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end}
+.field{grid-column:span 3}.wide{grid-column:span 6}.full{grid-column:span 12}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input,select,button{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+button{background:var(--accent);color:#fff;border:none;font-weight:600;cursor:pointer}
+.ghost{background:#fff;color:var(--text);border:1px solid var(--line)}
+.warn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.notice{padding:10px;border-radius:10px;background:#f8fafc;border:1px solid var(--line)}
+.err{padding:10px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:var(--err)}
+.ok{padding:10px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;color:var(--ok)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:7px;border-bottom:1px solid var(--line);font-size:13px;text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted)}
+.daygrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.daybox{border:1px solid var(--line);border-radius:12px;padding:8px;background:#fbfcff;min-width:0}
+.shift{padding:7px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:7px;font-size:12px}
+.badge{display:inline-block;padding:2px 6px;border-radius:999px;background:#e8f0f8;font-size:10px}
+.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700}
+#printTableWrap{overflow:auto}
+#printTable th,#printTable td{text-align:center}
+#printTable .namecol{text-align:left;white-space:nowrap}
+.weektabs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.weekbtn.active{outline:2px solid #1f4e78}
+#editSection{scroll-margin-top:18px}
+@media print{
+  @page{size:A4 landscape;margin:6mm}
+  .no-print{display:none!important}
+  body{background:#fff}
+  .wrap{max-width:none;margin:0;padding:0}
+  .card{border:none;margin:0;padding:0}
+  #printTable{width:100%;table-layout:fixed}
+  #printTable th,#printTable td{font-size:8px;padding:3px}
+}
+@media (max-width:1200px){.grid{grid-template-columns:1fr}.field,.wide,.full{grid-column:span 12}.daygrid{grid-template-columns:repeat(2,1fr)}.weektabs{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h2>Turnistica</h2>
+  <div class="card no-print">
+    <h1>Md Buona Spesa Italia</h1>
+    <div class="small">Versione stabile: cambio settimana corretto, genera mese coerente, PDF sempre legato alla settimana selezionata.</div>
+    <div class="actions" style="margin-top:10px">
+      <button onclick="generateSelectedWeek()">Genera settimana selezionata</button>
+      <button onclick="generateMonth()">Genera mese</button>
+      <button class="ghost" onclick="saveAll()">Salva</button>
+      <button class="ghost" onclick="exportJSON()">JSON</button>
+      <button class="ghost" onclick="exportCSV()">CSV</button>
+      <button class="warn" onclick="window.print()">PDF</button>
+    </div>
+    <div id="status" class="small" style="margin-top:10px"></div>
+  </div>
 
-<button onclick="genera()">Genera planning</button>
+  <div class="grid no-print">
+    <div class="card">
+      <h2>1. Settimane del mese</h2>
+      <div class="weektabs" id="weekTabs"></div>
+      <div id="weekConfigBox" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h2>2. Controlli</h2>
+      <div class="notice">
+        Schema fisso punto vendita:<br>
+        Mattina 3 persone.<br>
+        Pomeriggio 2 persone.<br>
+        Sera 3 persone, di cui una termina alle 20:30.<br>
+        Pomeriggio operativo: gerente 14:00–21:15, 14:00–17:15, 17:15–20:30, 17:30–21:15.
+      </div>
+      <div id="validationBox" style="margin-top:10px"></div>
+      <div style="margin-top:10px">
+        <span class="pill" id="monthHoursKpi">Mese: 0,00 h</span>
+        <span class="pill" id="monthCostKpi">Costo: 0,00 €</span>
+      </div>
+    </div>
+  </div>
 
-<div id="output"></div>
+  <div class="grid no-print">
+    <div class="card">
+      <h2>3. Dipendenti</h2>
+      <div class="row">
+        <div class="field"><label>Nome</label><input id="empFirstName"></div>
+        <div class="field"><label>Cognome</label><input id="empLastName"></div>
+        <div class="field"><label>Sesso</label><select id="empGender"><option value="M">Maschio</option><option value="F">Femmina</option></select></div>
+        <div class="field"><label>Tipo</label><select id="empType"><option value="FT">Full time</option><option value="PT">Part time</option><option value="EXT">Esterno</option></select></div>
+        <div class="field"><label>Ruolo</label><select id="empRole"><option value="Store Manager">Store Manager</option><option value="Vice Store Manager">Vice Store Manager</option><option value="Primo Assistente">Primo Assistente</option><option value="Secondo Assistente">Secondo Assistente</option><option value="Fruttivendolo">Fruttivendolo</option><option value="AddettoVendita">Addetto/Addetta vendita</option></select></div>
+        <div class="field"><label>Reparto 1</label><select id="empDept1"></select></div>
+        <div class="field"><label>Reparto 2</label><select id="empDept2"></select></div>
+        <div class="field"><label>Costo €/h</label><input id="empCost" type="number" step="0.01" value="12"></div>
+        <div class="field"><button onclick="addEmployee()">Aggiungi</button></div>
+      </div>
+      <table id="empTable"><thead><tr><th>Nome</th><th>Ruolo</th><th>Tipo</th><th>Reparti</th><th>Fairness</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
 
+    <div class="card" id="editSection">
+      <h2>4. Modifica turno</h2>
+      <div id="editBox" class="notice" style="margin-bottom:10px">Modalità: nuovo turno</div>
+      <div class="row">
+        <div class="field"><label>Settimana</label><select id="manualWeek"></select></div>
+        <div class="field"><label>Giorno</label><select id="manualDay"></select></div>
+        <div class="field wide"><label>Dipendente</label><select id="manualEmployee"></select></div>
+        <div class="field"><label>Ruolo turno</label><input id="manualRole"></div>
+        <div class="field"><label>Reparto</label><select id="manualDept"></select></div>
+        <div class="field"><label>Inizio</label><input id="manualStart" type="time" value="14:00"></div>
+        <div class="field"><label>Fine</label><input id="manualEnd" type="time" value="17:15"></div>
+        <div class="field"><label>Categoria</label><select id="manualCategory"><option value="normal">Normale</option><option value="overtime">Straordinario</option><option value="travel-normal">Trasferta ordinaria</option><option value="travel-overtime">Trasferta straordinaria</option></select></div>
+        <div class="field"><label>Chiusura</label><select id="manualClosure"><option value="NO">NO</option><option value="SI">SI</option></select></div>
+        <div class="field full"><div class="actions"><button id="saveShiftBtn" onclick="saveManualShift()">Salva turno</button><button class="ghost" onclick="resetManualForm()">Pulisci</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card no-print">
+    <h2>5. Planning settimana selezionata</h2>
+    <div class="daygrid" id="weekGrid"></div>
+  </div>
+
+  <div class="card">
+    <h2>6. PDF professionale</h2>
+    <div id="printTableWrap">
+      <table id="printTable">
+        <thead id="printThead"></thead>
+        <tbody id="printTbody"></tbody>
+        <tfoot id="printTfoot"></tfoot>
+      </table>
+    </div>
+  </div>
 </div>
 
 <script>
-function genera(){
-const giorni=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
-let html="";
+const DAYS=["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
+const STORAGE="md_bsi_intelligente_stabile_v2";
+let state=loadState();
+let currentWeek=1;
+let editRef=null;
 
-giorni.forEach(g=>{
- html+=`<div class='card'><b>${g}</b><br>
- Gerente 14-21:15<br>
- PT 14-17:15<br>
- PT 17:15-20:30<br>
- PT 17:30-21:15
- </div>`;
-});
-
-document.getElementById("output").innerHTML=html;
+function uid(){return Math.random().toString(36).slice(2,10)}
+function depts(){return ["Ortofrutta","Cassa"]}
+function shortName(e){return e.firstName+" "+((e.lastName||"")[0]?e.lastName[0]+".":"")}
+function roleLabel(e){return e.role==="AddettoVendita"?(e.gender==="F"?"Addetta vendita":"Addetto vendita"):e.role}
+function roleOrder(e){return {"Store Manager":1,"Vice Store Manager":2,"Primo Assistente":3,"Secondo Assistente":4,"Fruttivendolo":5,"AddettoVendita":6}[e.role]||9}
+function isMgmt(e){return ["Store Manager","Vice Store Manager","Primo Assistente","Secondo Assistente"].includes(e.role)}
+function findEmp(id){return state.employees.find(e=>e.id===id)}
+function shiftHours(a,b){const [ah,am]=a.split(":").map(Number),[bh,bm]=b.split(":").map(Number); return ((bh*60+bm)-(ah*60+am))/60}
+function fmt(n){return Number(n).toFixed(2).replace(".",",")}
+function setStatus(t,err=false){status.textContent=t; status.style.color=err?"#b91c1c":"#6b7280"}
+function mkShift(empId, roleLabel, dept, start, end, o={}){return {id:uid(), empId, roleLabel, dept, start, end, isClosure:!!o.isClosure, isOvertime:!!o.isOvertime, isTravel:!!o.isTravel}}
+function defaultEmployees(){return [
+{id:uid(),firstName:"Bruno",lastName:"Rossi",gender:"M",type:"FT",role:"Store Manager",cost:23,dept1:"Cassa",dept2:""},
+{id:uid(),firstName:"Mariagrazia",lastName:"Costa",gender:"F",type:"FT",role:"Vice Store Manager",cost:17,dept1:"Cassa",dept2:""},
+{id:uid(),firstName:"Vincenzo",lastName:"Pace",gender:"M",type:"FT",role:"Primo Assistente",cost:16,dept1:"Cassa",dept2:""},
+{id:uid(),firstName:"Deborah",lastName:"Sanna",gender:"F",type:"PT",role:"Secondo Assistente",cost:14,dept1:"Cassa",dept2:"Ortofrutta"},
+{id:uid(),firstName:"Pierpaolo",lastName:"Manca",gender:"M",type:"FT",role:"Fruttivendolo",cost:13,dept1:"Ortofrutta",dept2:""},
+{id:uid(),firstName:"Santa",lastName:"Loi",gender:"F",type:"PT",role:"AddettoVendita",cost:12,dept1:"Cassa",dept2:""},
+{id:uid(),firstName:"Giovanna",lastName:"Fiori",gender:"F",type:"PT",role:"AddettoVendita",cost:12,dept1:"Cassa",dept2:"Ortofrutta"},
+{id:uid(),firstName:"Enrico",lastName:"Dore",gender:"M",type:"PT",role:"AddettoVendita",cost:12,dept1:"Cassa",dept2:""}
+]}
+function defaultWeekConfig(n){return {week:n,name:"Settimana "+n,hasSecondFruit:"NO",secondFruitName:"Secondo Fruttivendolo",preferRotation:"SI",maxClosuresPT:3,budgetHours:248}}
+function defaultState(){return {employees:defaultEmployees(),weeks:[1,2,3,4,5].map(defaultWeekConfig),generated:{},fairness:{}}}
+function loadState(){try{const raw=localStorage.getItem(STORAGE); if(raw) return JSON.parse(raw)}catch(e){} return defaultState()}
+function saveState(){localStorage.setItem(STORAGE, JSON.stringify(state))}
+function ensureFairness(){state.employees.forEach(e=>{if(!state.fairness[e.id]) state.fairness[e.id]={closures:0,mornings:0,shifts:0}})}
+function fairnessOf(id){return state.fairness[id]||{closures:0,mornings:0,shifts:0}}
+function sortedEmployees(){return state.employees.slice().sort((a,b)=>roleOrder(a)-roleOrder(b)||shortName(a).localeCompare(shortName(b)))}
+function populateBasics(){
+  const deptOpts='<option value=""></option>'+depts().map(d=>`<option value="${d}">${d}</option>`).join("");
+  empDept1.innerHTML=deptOpts; empDept2.innerHTML=deptOpts; manualDept.innerHTML=deptOpts;
+  manualDay.innerHTML=DAYS.map(d=>`<option value="${d}">${d}</option>`).join("");
+  manualWeek.innerHTML=[1,2,3,4,5].map(n=>`<option value="${n}" ${n===currentWeek?"selected":""}>Settimana ${n}</option>`).join("");
+  manualEmployee.innerHTML='<option value=""></option>'+sortedEmployees().map(e=>`<option value="${e.id}">${shortName(e)} (${roleLabel(e)})</option>`).join("");
 }
+function renderWeekTabs(){
+  weekTabs.innerHTML='';
+  state.weeks.forEach(w=>{
+    const btn=document.createElement('button');
+    btn.className='weekbtn ghost'+(w.week===currentWeek?' active':'');
+    btn.textContent='Settimana '+w.week;
+    btn.onclick=()=>{currentWeek=w.week; renderAll()};
+    weekTabs.appendChild(btn);
+  });
+}
+function renderWeekConfig(){
+  const w=state.weeks.find(x=>x.week===currentWeek);
+  weekConfigBox.innerHTML=`
+    <div class="row">
+      <div class="field wide"><label>Nome settimana</label><input id="cfgName" value="${w.name}"></div>
+      <div class="field"><label>Budget ore</label><input id="cfgBudgetHours" type="number" step="0.25" value="${w.budgetHours}"></div>
+      <div class="field"><label>Secondo fruttivendolo</label><select id="cfgSecondFruit"><option value="NO" ${w.hasSecondFruit==="NO"?"selected":""}>NO</option><option value="SI" ${w.hasSecondFruit==="SI"?"selected":""}>SI</option></select></div>
+      <div class="field wide"><label>Nome secondo fruttivendolo</label><input id="cfgSecondFruitName" value="${w.secondFruitName}"></div>
+      <div class="field"><label>Rotazione equa</label><select id="cfgRotation"><option value="SI" ${w.preferRotation==="SI"?"selected":""}>SI</option><option value="NO" ${w.preferRotation==="NO"?"selected":""}>NO</option></select></div>
+      <div class="field"><label>Max chiusure PT</label><input id="cfgMaxClosuresPT" type="number" value="${w.maxClosuresPT}"></div>
+      <div class="field"><button onclick="saveWeekConfig()">Salva criteri settimana</button></div>
+    </div>`;
+}
+function saveWeekConfig(){
+  const w=state.weeks.find(x=>x.week===currentWeek);
+  w.name=document.getElementById('cfgName').value.trim()||('Settimana '+currentWeek);
+  w.budgetHours=Number(document.getElementById('cfgBudgetHours').value||248);
+  w.hasSecondFruit=document.getElementById('cfgSecondFruit').value;
+  w.secondFruitName=document.getElementById('cfgSecondFruitName').value.trim()||'Secondo Fruttivendolo';
+  w.preferRotation=document.getElementById('cfgRotation').value;
+  w.maxClosuresPT=Number(document.getElementById('cfgMaxClosuresPT').value||3);
+  saveState();
+  setStatus('Criteri settimana salvati');
+  renderAll();
+}
+function addEmployee(){
+  const fn=empFirstName.value.trim(), ln=empLastName.value.trim();
+  if(!fn||!ln){setStatus('Inserisci nome e cognome',true); return}
+  state.employees.push({id:uid(),firstName:fn,lastName:ln,gender:empGender.value,type:empType.value,role:empRole.value,cost:Number(empCost.value||0),dept1:empDept1.value,dept2:empDept2.value});
+  ensureFairness();
+  saveState(); renderAll(); empFirstName.value=''; empLastName.value=''; setStatus('Dipendente aggiunto');
+}
+function removeEmployee(id){
+  state.employees=state.employees.filter(e=>e.id!==id);
+  Object.keys(state.generated).forEach(k=>state.generated[k].forEach(d=>d.shifts=d.shifts.filter(s=>s.empId!==id)));
+  delete state.fairness[id];
+  saveState(); renderAll(); setStatus('Dipendente eliminato');
+}
+function ensureSecondFruit(cfg){
+  if(cfg.hasSecondFruit!=='SI') return;
+  const name=cfg.secondFruitName||'Secondo Fruttivendolo';
+  if(!state.employees.find(e=>e.firstName===name)){
+    state.employees.push({id:uid(),firstName:name,lastName:'',gender:'M',type:'FT',role:'Fruttivendolo',cost:16,dept1:'Ortofrutta',dept2:''});
+  }
+}
+function pickByFairness(list, used, mode){
+  const candidates=list.filter(e=>!used.has(e.id));
+  if(!candidates.length) return null;
+  candidates.sort((a,b)=>{
+    const fa=fairnessOf(a.id), fb=fairnessOf(b.id);
+    if(mode==='closure') return fa.closures-fb.closures || fa.shifts-fb.shifts || roleOrder(a)-roleOrder(b);
+    if(mode==='morning') return fa.mornings-fb.mornings || fa.shifts-fb.shifts || roleOrder(a)-roleOrder(b);
+    return fa.shifts-fb.shifts || fa.closures-fb.closures || fa.mornings-fb.mornings || roleOrder(a)-roleOrder(b);
+  });
+  return candidates[0];
+}
+function applyFairness(days){
+  days.forEach(day=>day.shifts.forEach(s=>{
+    const f=fairnessOf(s.empId);
+    f.shifts+=1;
+    if(s.start<='08:00') f.mornings+=1;
+    if(s.isClosure || s.end>='20:30') f.closures+=1;
+    state.fairness[s.empId]=f;
+  }));
+}
+function buildWeek(weekNum){
+  const cfg=state.weeks.find(w=>w.week===weekNum);
+  ensureSecondFruit(cfg); ensureFairness();
+  const managers=state.employees.filter(isMgmt);
+  const fruits=state.employees.filter(e=>e.role==='Fruttivendolo'||e.dept1==='Ortofrutta'||e.dept2==='Ortofrutta');
+  const cash=state.employees.filter(e=>e.dept1==='Cassa'||e.dept2==='Cassa'||e.role==='AddettoVendita'||e.role==='Secondo Assistente');
+  if(managers.length<2) throw new Error('Servono almeno 2 figure di gerenza');
+  if(cash.length<3) throw new Error('Servono almeno 3 persone su Cassa');
+  const days=[];
+  for(let i=0;i<DAYS.length;i++){
+    const dayName=DAYS[i], shifts=[], used=new Set();
+    if(dayName!=='Domenica'){
+      const openMgr = cfg.preferRotation==='SI' ? pickByFairness(managers, used, 'morning') : managers[i%managers.length];
+      used.add(openMgr.id);
+      shifts.push(mkShift(openMgr.id, roleLabel(openMgr), '', '06:30','14:00'));
+
+      const pier = state.employees.find(e=>e.firstName==='Pierpaolo');
+      if(pier && !used.has(pier.id)){
+        const early=(dayName==='Lunedì'||dayName==='Martedì');
+        shifts.push(mkShift(pier.id, roleLabel(pier), 'Ortofrutta', early?'06:30':'07:00', early?'13:00':'13:15'));
+        used.add(pier.id);
+      }
+      const secondFruit = state.employees.find(e=>e.firstName===cfg.secondFruitName);
+      if(cfg.hasSecondFruit==='SI' && secondFruit && !used.has(secondFruit.id)){
+        const morning=(i%2===0);
+        shifts.push(mkShift(secondFruit.id, roleLabel(secondFruit), 'Ortofrutta', morning?'07:00':'17:30', morning?'13:15':'21:15', {isClosure:!morning}));
+        used.add(secondFruit.id);
+      }
+      const cashMorning = pickByFairness(cash, used, 'morning');
+      if(cashMorning){ shifts.push(mkShift(cashMorning.id, roleLabel(cashMorning), 'Cassa', '07:30','14:00')); used.add(cashMorning.id); }
+
+      const closeMgr = cfg.preferRotation==='SI' ? (pickByFairness(managers, used, 'closure') || managers[(i+1)%managers.length]) : managers[(i+1)%managers.length];
+      if(!used.has(closeMgr.id)) used.add(closeMgr.id);
+      shifts.push(mkShift(closeMgr.id, roleLabel(closeMgr), '', '14:00','21:15', {isClosure:true}));
+
+      const p1 = pickByFairness(cash, used, 'load'); if(p1){ shifts.push(mkShift(p1.id, roleLabel(p1), 'Cassa', '14:00','17:15')); used.add(p1.id); }
+      const p2 = pickByFairness(cash, used, 'load'); if(p2){ shifts.push(mkShift(p2.id, roleLabel(p2), 'Cassa', '17:15','20:30')); used.add(p2.id); }
+      const p3 = pickByFairness(cash, used, 'closure'); if(p3){ shifts.push(mkShift(p3.id, roleLabel(p3), 'Cassa', '17:30','21:15', {isClosure:true})); used.add(p3.id); }
+    } else {
+      const mgr1=pickByFairness(managers, used, 'morning') || managers[0]; used.add(mgr1.id);
+      shifts.push(mkShift(mgr1.id, roleLabel(mgr1), '', '07:00','14:00'));
+      const f1=pickByFairness(fruits, used, 'morning'); if(f1){shifts.push(mkShift(f1.id, roleLabel(f1), 'Ortofrutta', '07:00','13:15')); used.add(f1.id);}
+      const f2=pickByFairness(fruits, used, 'morning'); if(f2){shifts.push(mkShift(f2.id, roleLabel(f2), 'Ortofrutta', '07:00','13:15')); used.add(f2.id);}
+      const c1=pickByFairness(cash, used, 'morning'); if(c1){shifts.push(mkShift(c1.id, roleLabel(c1), 'Cassa', '08:00','14:00')); used.add(c1.id);}
+      const mgr2=pickByFairness(managers, used, 'closure') || managers[1] || managers[0]; used.add(mgr2.id);
+      shifts.push(mkShift(mgr2.id, roleLabel(mgr2), '', '14:00','21:15', {isClosure:true}));
+      const c2=pickByFairness(cash, used, 'closure'); if(c2){shifts.push(mkShift(c2.id, roleLabel(c2), 'Cassa', '14:00','21:15', {isClosure:true})); used.add(c2.id);}
+    }
+    days.push({dayName, shifts});
+  }
+  return days;
+}
+function generateSelectedWeek(){
+  try{
+    saveWeekConfig();
+    const days=buildWeek(currentWeek);
+    state.generated[String(currentWeek)] = days;
+    saveState();
+    renderAll();
+    setStatus('Planning generato per la settimana '+currentWeek);
+  }catch(e){
+    setStatus(e.message||'Errore generazione settimana', true);
+  }
+}
+function generateMonth(){
+  try{
+    saveWeekConfig();
+    state.generated={};
+    state.fairness={};
+    ensureFairness();
+    [1,2,3,4,5].forEach(w=>{
+      const days=buildWeek(w);
+      state.generated[String(w)] = days;
+      applyFairness(days);
+    });
+    saveState();
+    renderAll();
+    setStatus('Mese generato correttamente');
+  }catch(e){
+    setStatus(e.message||'Errore generazione mese', true);
+  }
+}
+function resetManualForm(){
+  editRef=null;
+  manualWeek.value=String(currentWeek);
+  manualDay.disabled=false;
+  manualEmployee.value=''; manualRole.value=''; manualDept.value=''; manualStart.value='14:00'; manualEnd.value='17:15'; manualCategory.value='normal'; manualClosure.value='NO';
+  editBox.className='notice'; editBox.innerHTML='Modalità: nuovo turno'; saveShiftBtn.textContent='Salva turno';
+}
+function saveManualShift(){
+  const weekNum=manualWeek.value, dayName=manualDay.value, empId=manualEmployee.value;
+  const days=state.generated[String(weekNum)];
+  if(!days){setStatus('Genera prima la settimana', true); return}
+  const day=days.find(d=>d.dayName===dayName); if(!day){setStatus('Giorno non trovato', true); return}
+  const emp=findEmp(empId); if(!emp){setStatus('Seleziona dipendente', true); return}
+  const s=mkShift(emp.id, manualRole.value.trim()||roleLabel(emp), manualDept.value, manualStart.value, manualEnd.value, {isClosure:manualClosure.value==='SI', isOvertime:manualCategory.value==='overtime'||manualCategory.value==='travel-overtime', isTravel:manualCategory.value==='travel-normal'||manualCategory.value==='travel-overtime'});
+  const wasEdit=!!editRef;
+  if(wasEdit){
+    const idx=day.shifts.findIndex(x=>x.id===editRef); if(idx<0){setStatus('Turno non trovato', true); return}
+    day.shifts[idx]=Object.assign({}, s, {id:editRef});
+  }else day.shifts.push(s);
+  saveState(); renderAll(); resetManualForm(); setStatus(wasEdit?'Turno modificato':'Turno aggiunto');
+}
+function editShift(dayName, shiftId){
+  const days=state.generated[String(currentWeek)]||[];
+  const day=days.find(d=>d.dayName===dayName), s=day?.shifts.find(x=>x.id===shiftId); if(!s) return;
+  editRef=shiftId; manualWeek.value=String(currentWeek); manualDay.value=dayName; manualDay.disabled=true; manualEmployee.value=s.empId; manualRole.value=s.roleLabel; manualDept.value=s.dept||''; manualStart.value=s.start; manualEnd.value=s.end; manualCategory.value=s.isTravel?(s.isOvertime?'travel-overtime':'travel-normal'):(s.isOvertime?'overtime':'normal'); manualClosure.value=s.isClosure?'SI':'NO';
+  editBox.className='ok'; editBox.innerHTML=`Modifica turno di <strong>${shortName(findEmp(s.empId))}</strong> - ${dayName}`; saveShiftBtn.textContent='Aggiorna turno';
+  document.getElementById('editSection').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function deleteShift(dayName, shiftId){
+  const days=state.generated[String(currentWeek)]||[];
+  const day=days.find(d=>d.dayName===dayName); if(!day) return;
+  day.shifts=day.shifts.filter(s=>s.id!==shiftId); saveState(); renderAll(); setStatus('Turno eliminato');
+}
+function renderEmployees(){
+  const tbody=document.querySelector('#empTable tbody'); tbody.innerHTML='';
+  sortedEmployees().forEach(e=>{
+    const f=fairnessOf(e.id);
+    tbody.innerHTML += `<tr><td><strong>${shortName(e)}</strong></td><td>${roleLabel(e)}</td><td>${e.type}</td><td>${[e.dept1,e.dept2].filter(Boolean).join(' / ')||'-'}</td><td>M:${f.mornings} C:${f.closures}</td><td><button class="ghost" onclick='removeEmployee(${JSON.stringify(e.id)})'>Elimina</button></td></tr>`;
+  });
+}
+function dailySummary(day){let worked=0; day.shifts.forEach(s=>worked+=shiftHours(s.start,s.end)); return {worked}}
+function renderWeek(){
+  const grid=document.getElementById('weekGrid'); grid.innerHTML='';
+  const days=state.generated[String(currentWeek)]||[];
+  days.forEach(d=>{
+    let html=`<h3>${d.dayName}</h3>`;
+    d.shifts.forEach(s=>{
+      const e=findEmp(s.empId);
+      html += `<div class="shift"><strong>${shortName(e)}</strong> <span class="badge">${fmt(shiftHours(s.start,s.end))} h</span><br><span class="small">${s.start}-${s.end}${s.dept?` · ${s.dept}`:''}${s.isTravel?' · Trasf.':''}</span><div class="actions" style="margin-top:8px"><button class="ghost" onclick='editShift(${JSON.stringify(d.dayName)}, ${JSON.stringify(s.id)})'>Modifica</button><button class="ghost" onclick='deleteShift(${JSON.stringify(d.dayName)}, ${JSON.stringify(s.id)})'>Elimina</button></div></div>`;
+    });
+    html += `<div class="small"><strong>Totale giorno: ${fmt(dailySummary(d).worked)} h</strong></div>`;
+    grid.innerHTML += `<div class="daybox">${html}</div>`;
+  });
+}
+function renderPrint(){
+  const emps=sortedEmployees();
+  let head='<tr><th class="namecol">Dipendente</th>'; DAYS.forEach(d=>head+=`<th>${d}</th>`); head+='<th>Totale sett.</th><th>Trasf.</th></tr>';
+  printThead.innerHTML=head;
+  const days=state.generated[String(currentWeek)]||[];
+  let body=''; emps.forEach(e=>{
+    let total=0, travel=0;
+    body += `<tr><td class="namecol"><strong>${shortName(e)}</strong></td>`;
+    DAYS.forEach(dayName=>{
+      const day=days.find(d=>d.dayName===dayName), shifts=(day?.shifts||[]).filter(s=>s.empId===e.id);
+      if(!shifts.length) body += '<td>-</td>';
+      else{
+        const txt=shifts.map(s=>{const h=shiftHours(s.start,s.end); total+=h; if(s.isTravel) travel+=h; return `${s.start}-${s.end}<br>${fmt(h)} h`;}).join('<hr style="border:none;border-top:1px solid #ddd;margin:1px 0">');
+        body += `<td>${txt}</td>`;
+      }
+    });
+    body += `<td><strong>${fmt(total)} h</strong></td><td>${travel?fmt(travel)+' h':'-'}</td></tr>`;
+  });
+  printTbody.innerHTML=body;
+  let foot='<tr><td class="namecol"><strong>Totale giorno</strong></td>';
+  DAYS.forEach(dayName=>{const d=days.find(x=>x.dayName===dayName); foot += `<td><strong>${fmt(d?dailySummary(d).worked:0)} h</strong></td>`;});
+  const weekTotal=days.reduce((a,d)=>a+dailySummary(d).worked,0);
+  const travelWeek=days.reduce((a,d)=>a+d.shifts.filter(s=>s.isTravel).reduce((x,s)=>x+shiftHours(s.start,s.end),0),0);
+  foot += `<td><strong>${fmt(weekTotal)} h</strong></td><td><strong>${travelWeek?fmt(travelWeek)+' h':'-'}</strong></td></tr>`;
+  printTfoot.innerHTML=foot;
+}
+function renderValidation(){
+  const days=state.generated[String(currentWeek)]||[];
+  const issues=[];
+  days.forEach(d=>{
+    const open=d.shifts.some(s=>{const e=findEmp(s.empId); return isMgmt(e)&&s.start<='07:30'});
+    const close=d.shifts.some(s=>{const e=findEmp(s.empId); return isMgmt(e)&&s.end>='21:15'});
+    if(d.dayName!=='Domenica' && !open) issues.push(`${d.dayName}: manca gerenza apertura`);
+    if(!close) issues.push(`${d.dayName}: manca gerenza chiusura`);
+  });
+  validationBox.innerHTML = issues.length?`<div class="err">${issues.join('<br>')}</div>`:`<div class="ok">Settimana ${currentWeek} valida sulla gerenza</div>`;
+}
+function renderMonthKpi(){
+  let hours=0, cost=0;
+  Object.values(state.generated).forEach(days=>days.forEach(d=>d.shifts.forEach(s=>{const h=shiftHours(s.start,s.end); hours+=h; const e=findEmp(s.empId); cost+=h*Number(e?.cost||0)})));
+  monthHoursKpi.textContent=`Mese: ${fmt(hours)} h`;
+  monthCostKpi.textContent=`Costo: ${fmt(cost)} €`;
+}
+function saveAll(){saveState(); setStatus('Dati salvati')}
+function exportJSON(){saveState(); const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='md_buona_spesa_intelligente_stabile_v2.json'; a.click();}
+function exportCSV(){
+  const days=state.generated[String(currentWeek)]||[];
+  let csv='Dipendente,Ruolo,Lunedì,Martedì,Mercoledì,Giovedì,Venerdì,Sabato,Domenica,Totale settimana,Trasferta\n';
+  sortedEmployees().forEach(e=>{
+    let row=[shortName(e),roleLabel(e)], total=0, travel=0;
+    DAYS.forEach(dayName=>{
+      const day=days.find(d=>d.dayName===dayName), shifts=(day?.shifts||[]).filter(s=>s.empId===e.id);
+      if(!shifts.length) row.push('-');
+      else row.push(shifts.map(s=>{const h=shiftHours(s.start,s.end); total+=h; if(s.isTravel) travel+=h; return `${s.start}-${s.end} ${h.toFixed(2)}h`;}).join(' | '));
+    });
+    row.push(total.toFixed(2),travel.toFixed(2));
+    csv += row.map(x=>String(x).replace(/,/g,';')).join(',')+'\n';
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='md_buona_spesa_intelligente_stabile_v2.csv'; a.click();
+}
+function renderAll(){
+  populateBasics();
+  renderWeekTabs();
+  renderWeekConfig();
+  renderEmployees();
+  renderWeek();
+  renderPrint();
+  renderValidation();
+  renderMonthKpi();
+}
+window.addEventListener('load', ()=>{renderAll(); if(!state.generated[String(currentWeek)]) generateSelectedWeek();});
 </script>
 </body>
 </html>
