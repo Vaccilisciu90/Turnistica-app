@@ -3,58 +3,511 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Md Buona Spesa Italia – Operativa v1</title>
+<meta name="theme-color" content="#1f4e78">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Md Buona Spesa Italia</title>
 <style>
-body{font-family:Arial;margin:0;background:#f4f6fb}
-.wrap{max-width:1400px;margin:10px auto;padding:10px}
-.card{background:#fff;padding:10px;border-radius:10px;margin-bottom:10px}
-button{padding:10px;margin:5px;border:none;background:#1f4e78;color:#fff;border-radius:8px}
-.day{border:1px solid #ccc;border-radius:8px;padding:6px;margin:5px}
+:root{--bg:#f6f7fb;--card:#fff;--line:#d9deea;--text:#1f2937;--muted:#6b7280;--accent:#1f4e78;--ot:#fff2cc;--mg:#dbeafe;--pt:#fff7cc;--fruit:#dcfce7;--danger:#fef2f2}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:1800px;margin:18px auto;padding:0 12px 28px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+h1{margin:0 0 6px;font-size:28px}h2{margin:0 0 10px;font-size:18px}h3{margin:0 0 8px;font-size:15px}
+.lead,.small{color:var(--muted)}
+.grid{display:grid;grid-template-columns:1.06fr .94fr;gap:14px}
+.row{display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end}
+.field{grid-column:span 3}.wide{grid-column:span 6}.full{grid-column:span 12}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input,select,button,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+textarea{min-height:64px;resize:vertical}
+button{cursor:pointer;background:var(--accent);color:#fff;border:none;font-weight:600}
+.secondary{background:#eef2ff;color:#1e40af;border:1px solid #c7d2fe}
+.ghost{background:#fff;color:#1f2937;border:1px solid var(--line)}
+.warn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.notice{padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--line)}
+.errorbox{padding:10px 12px;border-radius:10px;background:var(--danger);border:1px solid #fecaca;color:#b91c1c}
+.successbox{padding:10px 12px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px 7px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;vertical-align:top}
+th{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700}
+.totals{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.kpi{padding:11px;border:1px solid var(--line);border-radius:12px;background:#fcfdff}
+.daygrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.daybox{border:1px solid var(--line);border-radius:12px;padding:8px;background:#fbfcff;min-width:0}
+.shift{padding:7px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:7px;font-size:13px}
+.shift.mg{background:var(--mg)} .shift.pt{background:var(--pt)} .shift.ot{background:var(--ot)} .shift.fruit{background:var(--fruit)}
+.badge{display:inline-block;padding:2px 6px;border-radius:999px;background:#e8f0f8;font-size:11px}
+.hour-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #eef1f6;font-size:13px}
+#printTableWrap{overflow:auto}
+#printTable{min-width:1100px}
+#printTable td,#printTable th{text-align:center}
+#printTable .namecol{text-align:left;white-space:nowrap}
+#editSection{scroll-margin-top:18px}
+@media print{
+  @page{size:A4 landscape;margin:6mm}
+  body{background:#fff}
+  .no-print{display:none!important}
+  .wrap{max-width:none;margin:0;padding:0}
+  .card{border:none;margin:0;padding:0}
+  #printTable{width:100%;min-width:0;table-layout:fixed}
+  #printTable th,#printTable td{font-size:8px;padding:3px 2px;word-wrap:break-word}
+  #printTable .namecol{font-size:8px}
+}
+@media (max-width:1300px){.grid,.totals{grid-template-columns:1fr}}
+@media (max-width:1100px){.daygrid{grid-template-columns:repeat(2,1fr)}.field,.wide,.full{grid-column:span 12}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<div class="card">
-<h2>Md Buona Spesa Italia – Operativa v1</h2>
-<button onclick="genera()">Genera settimana</button>
-</div>
-<div id="out"></div>
+  <div class="card no-print">
+    <h1>Md Buona Spesa Italia</h1>
+    <p class="lead">Versione corretta: pulsante genera planning funzionante, pomeriggio con la tua struttura, PDF compatto.</p>
+    <div class="actions">
+      <button onclick="loadDemo()">Demo</button>
+      <button class="secondary" onclick="generateWeek()">Genera planning</button>
+      <button class="ghost" onclick="saveData()">Salva</button>
+      <button class="ghost" onclick="exportJSON()">JSON</button>
+      <button class="ghost" onclick="exportCSV()">CSV</button>
+      <button class="warn" onclick="window.print()">PDF</button>
+    </div>
+    <div id="status" class="small" style="margin-top:10px"></div>
+  </div>
+
+  <div class="grid no-print">
+    <div class="card">
+      <h2>1. Negozio</h2>
+      <div class="row">
+        <div class="field wide"><label>Nome punto vendita</label><input id="storeName" value="Punto vendita A"></div>
+        <div class="field"><label>Modalità</label><select id="planningMode"><option value="automatico">Automatico</option><option value="ibrido">Ibrido</option><option value="libero">Libero</option></select></div>
+        <div class="field"><label>Minimo settimana</label><input id="minimumWeekHours" type="number" step="0.25" value="248"></div>
+        <div class="field"><label>Budget mensile</label><input id="monthlyBudget" type="number" step="0.01" value="100000"></div>
+        <div class="field"><label>Ore mensili</label><input id="monthlyHours" type="number" step="0.25" value="1000"></div>
+        <div class="field"><label>Ore usate mese</label><input id="usedMonthHours" type="number" step="0.25" value="0"></div>
+        <div class="field"><label>Fatturato settimana</label><input id="weeklyForecast" type="number" step="0.01" value="25000"></div>
+        <div class="field"><label>Calcolo ore</label><select id="weekHoursMode"><option value="proposal">Proposta automatica</option><option value="manual">Manuale</option></select></div>
+        <div class="field"><label>Ore target settimana</label><input id="weekTargetHours" type="number" step="0.25" value="250"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="field wide"><label>Reparto 1</label><input id="dept1Name" value="Ortofrutta" readonly></div>
+        <div class="field"><label>Minimo reparto 1</label><input id="dept1Min" type="number" value="2"></div>
+        <div class="field wide"><label>Reparto 2</label><input id="dept2Name" value="Cassa" readonly></div>
+        <div class="field"><label>Minimo reparto 2</label><input id="dept2Min" type="number" value="1"></div>
+        <div class="field"><label>Secondo fruttivendolo</label><select id="hasSecondFruit"><option value="NO">NO</option><option value="SI">SI</option></select></div>
+        <div class="field wide"><label>Nome secondo fruttivendolo</label><input id="secondFruitName" value="Secondo Fruttivendolo"></div>
+      </div>
+      <div class="totals" style="margin-top:12px">
+        <div class="kpi"><div class="small">Produttività budget</div><div id="kpiBudgetProductivity" class="pill">0,00 €/h</div></div>
+        <div class="kpi"><div class="small">Ore residue mese</div><div id="kpiMonthHoursLeft" class="pill">0,00 h</div></div>
+        <div class="kpi"><div class="small">Target settimana</div><div id="kpiWeekTarget" class="pill">0,00 h</div></div>
+        <div class="kpi"><div class="small">Costo settimana</div><div id="kpiCostWeek" class="pill">0,00 €</div></div>
+        <div class="kpi"><div class="small">Ore ordinarie</div><div id="kpiOrdinaryHours" class="pill">0,00 h</div></div>
+        <div class="kpi"><div class="small">Produttività reale</div><div id="kpiRealProd" class="pill">0,00 €/h</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. Costi</h2>
+      <div class="row">
+        <div class="field"><label>Costo FT €/h</label><input id="costFT" type="number" step="0.01" value="15"></div>
+        <div class="field"><label>Costo PT €/h</label><input id="costPT" type="number" step="0.01" value="12"></div>
+        <div class="field"><label>Costo esterno €/h</label><input id="costEXT" type="number" step="0.01" value="14"></div>
+        <div class="field"><label>Costo straordinario €/h</label><input id="costOT" type="number" step="0.01" value="18"></div>
+      </div>
+      <div id="blockingBox" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="grid no-print">
+    <div class="card">
+      <h2>3. Dipendenti</h2>
+      <div class="row">
+        <div class="field"><label>Nome</label><input id="empFirstName"></div>
+        <div class="field"><label>Cognome</label><input id="empLastName"></div>
+        <div class="field"><label>Sesso</label><select id="empGender"><option value="M">Maschio</option><option value="F">Femmina</option></select></div>
+        <div class="field"><label>Tipo</label><select id="empType"><option value="FT">Full time</option><option value="PT">Part time</option><option value="EXT">Esterno</option></select></div>
+        <div class="field"><label>Ruolo</label><select id="empRole"><option value="Store Manager">Store Manager</option><option value="Vice Store Manager">Vice Store Manager</option><option value="Primo Assistente">Primo Assistente</option><option value="Secondo Assistente">Secondo Assistente</option><option value="Fruttivendolo">Fruttivendolo</option><option value="AddettoVendita">Addetto/Addetta vendita</option></select></div>
+        <div class="field"><label>Livello</label><input id="empLevel" value="4"></div>
+        <div class="field"><label>Costo personale €/h</label><input id="empCost" type="number" step="0.01" value="12"></div>
+        <div class="field"><label>Reparto 1</label><select id="empDept1"></select></div>
+        <div class="field"><label>Reparto 2</label><select id="empDept2"></select></div>
+        <div class="field wide"><label>Note</label><input id="empNotes"></div>
+        <div class="field"><button onclick="addEmployee()">Aggiungi</button></div>
+      </div>
+      <table id="empTable"><thead><tr><th>Nome</th><th>Ruolo</th><th>Tipo</th><th>Livello</th><th>Costo</th><th>Reparti</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="card" id="editSection">
+      <h2>4. Modifica turno</h2>
+      <div id="editModeBox" class="notice" style="margin-bottom:10px">Modalità: nuovo turno</div>
+      <div class="row">
+        <div class="field"><label>Giorno</label><select id="manualDay"></select></div>
+        <div class="field wide"><label>Dipendente</label><select id="manualEmployee"></select></div>
+        <div class="field"><label>Ruolo turno</label><input id="manualRole"></div>
+        <div class="field"><label>Reparto</label><select id="manualDept"></select></div>
+        <div class="field"><label>Inizio</label><input id="manualStart" type="time" value="14:00"></div>
+        <div class="field"><label>Fine</label><input id="manualEnd" type="time" value="17:15"></div>
+        <div class="field"><label>Categoria</label><select id="manualCategory"><option value="normal">Normale</option><option value="overtime">Straordinario</option><option value="travel-normal">Trasferta ordinaria</option><option value="travel-overtime">Trasferta straordinaria</option></select></div>
+        <div class="field"><label>Chiusura</label><select id="manualClosure"><option value="NO">NO</option><option value="SI">SI</option></select></div>
+        <div class="field full"><div class="actions"><button id="saveShiftBtn" onclick="saveManualShift()">Salva turno</button><button class="ghost" onclick="resetManualForm()">Pulisci</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card no-print">
+    <h2>5. Planning settimana</h2>
+    <div class="daygrid" id="weekGrid"></div>
+  </div>
+
+  <div class="card">
+    <h2>6. Stampa/PDF</h2>
+    <div id="printTableWrap">
+      <table id="printTable">
+        <thead id="printThead"></thead>
+        <tbody id="printTbody"></tbody>
+        <tfoot id="printTfoot"></tfoot>
+      </table>
+    </div>
+  </div>
 </div>
 
 <script>
-const gerenti=["Bruno","Mariagrazia","Vincenzo","Deborah"];
-const giorni=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+const DAYS=["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
+const STORAGE_KEY="md_buona_spesa_italia_fix_v7";
+let state=loadState();
+let editRef=null;
 
-function genera(){
- let html="";
- let riposiIndex=0;
+function uid(){return Math.random().toString(36).slice(2,10);}
+function shortName(emp){const last=(emp.lastName||"").trim(); return `${emp.firstName} ${last?last[0]+".":""}`.trim();}
+function displayRole(emp){if(emp.role!=="AddettoVendita") return emp.role; return emp.gender==="F"?"Addetta vendita":"Addetto vendita";}
+function roleOrder(emp){if(emp.role==="Store Manager") return 1; if(emp.role==="Vice Store Manager") return 2; if(emp.role==="Primo Assistente") return 3; if(emp.role==="Secondo Assistente") return 4; if(emp.role==="Fruttivendolo") return 5; return 6;}
+function isManagement(emp){return ["Store Manager","Vice Store Manager","Primo Assistente","Secondo Assistente"].includes(emp.role);}
+function findEmp(id){return state.employees.find(e=>e.id===id);}
+function shiftHours(start,end){const [sh,sm]=start.split(":").map(Number),[eh,em]=end.split(":").map(Number); return ((eh*60+em)-(sh*60+sm))/60;}
+function fmt(n){return Number(n).toFixed(2).replace(".",",");}
+function setStatus(msg,type="ok"){status.textContent=msg; status.className=type==="error"?"small error":"small ok";}
+function mkShift(empId, roleLabel, dept, start, end, opts={}){return{id:uid(), empId, roleLabel, dept, start, end, isClosure:!!opts.isClosure, isOvertime:!!opts.isOvertime, isTravel:!!opts.isTravel};}
+function defaultEmployees(){return[
+{id:uid(),firstName:"Bruno",lastName:"Rossi",gender:"M",type:"FT",role:"Store Manager",level:"1",cost:23,dept1:"Cassa",dept2:"",notes:""},
+{id:uid(),firstName:"Mariagrazia",lastName:"Costa",gender:"F",type:"FT",role:"Vice Store Manager",level:"3",cost:17,dept1:"Cassa",dept2:"",notes:""},
+{id:uid(),firstName:"Vincenzo",lastName:"Pace",gender:"M",type:"FT",role:"Primo Assistente",level:"3",cost:16,dept1:"Cassa",dept2:"",notes:""},
+{id:uid(),firstName:"Deborah",lastName:"Sanna",gender:"F",type:"PT",role:"Secondo Assistente",level:"4",cost:14,dept1:"Cassa",dept2:"Ortofrutta",notes:""},
+{id:uid(),firstName:"Pierpaolo",lastName:"Manca",gender:"M",type:"FT",role:"Fruttivendolo",level:"4",cost:13,dept1:"Ortofrutta",dept2:"",notes:""},
+{id:uid(),firstName:"Santa",lastName:"Loi",gender:"F",type:"PT",role:"AddettoVendita",level:"4",cost:12,dept1:"Cassa",dept2:"",notes:""},
+{id:uid(),firstName:"Giovanna",lastName:"Fiori",gender:"F",type:"PT",role:"AddettoVendita",level:"4",cost:12,dept1:"Cassa",dept2:"Ortofrutta",notes:""},
+{id:uid(),firstName:"Enrico",lastName:"Dore",gender:"M",type:"PT",role:"AddettoVendita",level:"4",cost:12,dept1:"Cassa",dept2:"",notes:""}
+];}
+function defaultState(){return{store:{name:"Punto vendita A",minimumWeekHours:248,monthlyBudget:100000,monthlyHours:1000,usedMonthHours:0,weeklyForecast:25000,weekTargetHours:250,hasSecondFruit:"NO",secondFruitName:"Secondo Fruttivendolo"}, employees:defaultEmployees(), days:[]};}
+function loadState(){try{const raw=localStorage.getItem(STORAGE_KEY); if(raw) return JSON.parse(raw);}catch(e){} return defaultState();}
+function saveState(){localStorage.setItem(STORAGE_KEY, JSON.stringify(state));}
+function saveData(){saveFormToState(); saveState(); setStatus("Dati salvati correttamente");}
+function currentDepartments(){return ["Ortofrutta","Cassa"];}
+function sortedEmployees(){return state.employees.slice().sort((a,b)=>{const ro=roleOrder(a)-roleOrder(b); return ro!==0?ro:shortName(a).localeCompare(shortName(b));});}
 
- giorni.forEach((g,i)=>{
-   let riposo=gerenti[riposiIndex%4];
-
-   // Bruno e Mariagrazia solo gio/ven/dom
-   if((g==="Gio"||g==="Ven"||g==="Dom")){
-     riposo = (i%2===0) ? "Bruno" : "Mariagrazia";
-   }
-
-   let disponibili=gerenti.filter(x=>x!==riposo);
-
-   let apertura=disponibili[0];
-   let chiusura=disponibili[1];
-
-   html+=`<div class="card">
-   <strong>${g}</strong><br>
-   Riposo: ${riposo}<br>
-   Apertura: ${apertura}<br>
-   Chiusura: ${chiusura}<br>
-   Supporto: ${disponibili[2]}
-   </div>`;
-
-   riposiIndex++;
- });
-
- document.getElementById("out").innerHTML=html;
+function populateStaticFields(){
+  storeName.value=state.store.name||"Punto vendita A";
+  minimumWeekHours.value=state.store.minimumWeekHours||248;
+  monthlyBudget.value=state.store.monthlyBudget||100000;
+  monthlyHours.value=state.store.monthlyHours||1000;
+  usedMonthHours.value=state.store.usedMonthHours||0;
+  weeklyForecast.value=state.store.weeklyForecast||25000;
+  weekTargetHours.value=state.store.weekTargetHours||250;
+  hasSecondFruit.value=state.store.hasSecondFruit||"NO";
+  secondFruitName.value=state.store.secondFruitName||"Secondo Fruttivendolo";
+  dept1Name.value="Ortofrutta"; dept2Name.value="Cassa";
 }
+function saveFormToState(){
+  state.store.name=storeName.value.trim()||"Punto vendita A";
+  state.store.minimumWeekHours=Number(minimumWeekHours.value||248);
+  state.store.monthlyBudget=Number(monthlyBudget.value||0);
+  state.store.monthlyHours=Number(monthlyHours.value||0);
+  state.store.usedMonthHours=Number(usedMonthHours.value||0);
+  state.store.weeklyForecast=Number(weeklyForecast.value||0);
+  state.store.weekTargetHours=Number(weekTargetHours.value||0);
+  state.store.hasSecondFruit=hasSecondFruit.value;
+  state.store.secondFruitName=secondFruitName.value.trim()||"Secondo Fruttivendolo";
+}
+function populateDeptSelects(){
+  const opts='<option value=""></option>'+currentDepartments().map(d=>`<option value="${d}">${d}</option>`).join("");
+  empDept1.innerHTML=opts; empDept2.innerHTML=opts; manualDept.innerHTML=opts;
+}
+function populateManualControls(){
+  const dayOpts=DAYS.map(d=>`<option value="${d}">${d}</option>`).join("");
+  manualDay.innerHTML=dayOpts;
+  const empOpts='<option value=""></option>'+sortedEmployees().map(e=>`<option value="${e.id}">${shortName(e)} (${displayRole(e)})</option>`).join("");
+  manualEmployee.innerHTML=empOpts;
+}
+function addEmployee(){
+  const first=empFirstName.value.trim(), last=empLastName.value.trim();
+  if(!first||!last){setStatus("Inserisci nome e cognome","error"); return;}
+  state.employees.push({id:uid(),firstName:first,lastName:last,gender:empGender.value,type:empType.value,role:empRole.value,level:empLevel.value.trim(),cost:Number(empCost.value||0),dept1:empDept1.value,dept2:empDept2.value,notes:empNotes.value.trim()});
+  empFirstName.value=""; empLastName.value=""; empNotes.value="";
+  saveState(); renderAll(); setStatus("Dipendente aggiunto");
+}
+function removeEmployee(id){
+  state.employees=state.employees.filter(e=>e.id!==id);
+  state.days.forEach(d=>d.shifts=d.shifts.filter(s=>s.empId!==id));
+  saveState(); renderAll(); setStatus("Dipendente eliminato");
+}
+function ensureSecondFruit(){
+  if(hasSecondFruit.value!=="SI") return;
+  const name=(secondFruitName.value||"").trim()||"Secondo Fruttivendolo";
+  if(!state.employees.find(e=>e.firstName===name)){
+    state.employees.push({id:uid(),firstName:name,lastName:"",gender:"M",type:"FT",role:"Fruttivendolo",level:"4",cost:Number(costFT.value||15),dept1:"Ortofrutta",dept2:"",notes:"Secondo fruttivendolo"});
+  }
+}
+function generateWeek(){
+  try{
+    saveFormToState();
+    ensureSecondFruit();
+    const managers=state.employees.filter(e=>isManagement(e));
+    const fruitWorkers=state.employees.filter(e=>e.role==="Fruttivendolo"||e.dept1==="Ortofrutta"||e.dept2==="Ortofrutta");
+    const cashWorkers=state.employees.filter(e=>e.dept1==="Cassa"||e.dept2==="Cassa"||e.role==="AddettoVendita"||e.role==="Secondo Assistente");
+    if(managers.length<2){setStatus("Servono almeno 2 figure di gerenza per generare il planning","error"); return;}
+    if(cashWorkers.length<3){setStatus("Servono almeno 3 persone disponibili su Cassa per il pomeriggio","error"); return;}
+    const days=[];
+    for(let i=0;i<DAYS.length;i++){
+      const dayName=DAYS[i];
+      const shifts=[];
+      const used=new Set();
+      if(dayName!=="Domenica"){
+        const openMgr=managers[i % managers.length];
+        const closeMgr=managers[(i+1) % managers.length];
+        shifts.push(mkShift(openMgr.id, displayRole(openMgr), "", "06:30", "14:00", {isOvertime:true}));
+        used.add(openMgr.id);
+
+        const pier=state.employees.find(e=>e.firstName==="Pierpaolo");
+        if(pier){
+          const early=(dayName==="Lunedì"||dayName==="Martedì");
+          shifts.push(mkShift(pier.id, displayRole(pier), "Ortofrutta", early?"06:30":"07:00", early?"13:00":"13:15"));
+          used.add(pier.id);
+        }
+
+        const secondFruitNameVal=(secondFruitName.value||"").trim();
+        const secondFruit=state.employees.find(e=>e.firstName===secondFruitNameVal);
+        if(hasSecondFruit.value==="SI" && secondFruit && !used.has(secondFruit.id)){
+          const morning=(i%2===0);
+          shifts.push(mkShift(secondFruit.id, displayRole(secondFruit), "Ortofrutta", morning?"07:00":"17:30", morning?"13:15":"21:15", {isClosure:!morning}));
+          used.add(secondFruit.id);
+        }
+
+        const morningCash = cashWorkers.find(e=>!used.has(e.id));
+        if(morningCash){shifts.push(mkShift(morningCash.id, displayRole(morningCash), "Cassa", "07:30", "14:00")); used.add(morningCash.id);}
+
+        // Pomeriggio corretto: gerente + PT 14-17:15 + persona 17:15-20:30 + persona 17:30-21:15
+        if(!used.has(closeMgr.id)){used.add(closeMgr.id);}
+        shifts.push(mkShift(closeMgr.id, displayRole(closeMgr), "", "14:00", "21:15", {isClosure:true}));
+
+        const pt1 = cashWorkers.find(e=>!used.has(e.id));
+        if(pt1){shifts.push(mkShift(pt1.id, displayRole(pt1), "Cassa", "14:00", "17:15")); used.add(pt1.id);}
+        const pt2 = cashWorkers.find(e=>!used.has(e.id));
+        if(pt2){shifts.push(mkShift(pt2.id, displayRole(pt2), "Cassa", "17:15", "20:30")); used.add(pt2.id);}
+        const pt3 = cashWorkers.find(e=>!used.has(e.id));
+        if(pt3){shifts.push(mkShift(pt3.id, displayRole(pt3), "Cassa", "17:30", "21:15", {isClosure:true})); used.add(pt3.id);}
+      } else {
+        const mgr1=managers[0], mgr2=managers[1];
+        shifts.push(mkShift(mgr1.id, displayRole(mgr1), "", "07:00", "14:00"));
+        const fruit1=fruitWorkers[0], fruit2=fruitWorkers[1]||cashWorkers[0], cassa=cashWorkers[1]||cashWorkers[0];
+        if(fruit1) shifts.push(mkShift(fruit1.id, displayRole(fruit1), "Ortofrutta", "07:00", "13:15"));
+        if(fruit2 && fruit2.id!==fruit1?.id) shifts.push(mkShift(fruit2.id, displayRole(fruit2), "Ortofrutta", "07:00", "13:15"));
+        if(cassa && cassa.id!==fruit1?.id && cassa.id!==fruit2?.id) shifts.push(mkShift(cassa.id, displayRole(cassa), "Cassa", "08:00", "14:00"));
+        shifts.push(mkShift(mgr2.id, displayRole(mgr2), "", "14:00", "21:15", {isClosure:true}));
+        const close2 = cashWorkers.find(e=>![mgr1.id,mgr2.id,fruit1?.id,fruit2?.id,cassa?.id].includes(e.id));
+        if(close2) shifts.push(mkShift(close2.id, displayRole(close2), "Cassa", "14:00", "21:15", {isClosure:true}));
+      }
+      days.push({dayName, shifts});
+    }
+    state.days=days;
+    saveState();
+    renderAll();
+    setStatus("Planning generato");
+  }catch(err){
+    setStatus("Errore nella generazione planning","error");
+    console.error(err);
+  }
+}
+function resetManualForm(){
+  editRef=null;
+  manualDay.disabled=false;
+  manualDay.value=DAYS[0];
+  manualEmployee.value="";
+  manualRole.value="";
+  manualDept.value="";
+  manualStart.value="14:00";
+  manualEnd.value="17:15";
+  manualCategory.value="normal";
+  manualClosure.value="NO";
+  editModeBox.className="notice";
+  editModeBox.innerHTML="Modalità: nuovo turno";
+  saveShiftBtn.textContent="Salva turno";
+}
+function saveManualShift(){
+  const dayName=manualDay.value, empId=manualEmployee.value;
+  if(!dayName||!empId||!manualStart.value||!manualEnd.value){setStatus("Compila il turno manuale","error"); return;}
+  if(shiftHours(manualStart.value, manualEnd.value)<=0){setStatus("L'orario finale deve essere dopo l'inizio","error"); return;}
+  const day=state.days.find(d=>d.dayName===dayName);
+  if(!day){setStatus("Genera prima il planning","error"); return;}
+  const emp=findEmp(empId);
+  const shift=mkShift(empId, manualRole.value.trim()||displayRole(emp), manualDept.value, manualStart.value, manualEnd.value, {isClosure:manualClosure.value==="SI", isOvertime:manualCategory.value==="overtime"||manualCategory.value==="travel-overtime", isTravel:manualCategory.value==="travel-normal"||manualCategory.value==="travel-overtime"});
+  const wasEdit=!!editRef;
+  if(wasEdit){
+    const idx=day.shifts.findIndex(s=>s.id===editRef);
+    if(idx<0){setStatus("Turno da modificare non trovato","error"); return;}
+    day.shifts[idx]=Object.assign({}, shift, {id:editRef});
+  } else {
+    day.shifts.push(shift);
+  }
+  saveState(); renderAll(); resetManualForm(); setStatus(wasEdit?"Turno modificato correttamente":"Turno aggiunto correttamente");
+}
+function editShift(dayName, shiftId){
+  const day=state.days.find(d=>d.dayName===dayName), shift=day?.shifts.find(s=>s.id===shiftId);
+  if(!shift) return;
+  editRef=shiftId;
+  manualDay.value=dayName;
+  manualDay.disabled=true;
+  manualEmployee.value=shift.empId;
+  manualRole.value=shift.roleLabel;
+  manualDept.value=shift.dept||"";
+  manualStart.value=shift.start;
+  manualEnd.value=shift.end;
+  manualCategory.value=shift.isTravel?(shift.isOvertime?"travel-overtime":"travel-normal"):(shift.isOvertime?"overtime":"normal");
+  manualClosure.value=shift.isClosure?"SI":"NO";
+  editModeBox.className="successbox";
+  editModeBox.innerHTML=`Modalità: modifica turno di <strong>${shortName(findEmp(shift.empId))}</strong> - ${dayName}`;
+  saveShiftBtn.textContent="Aggiorna turno";
+  document.getElementById("editSection").scrollIntoView({behavior:"smooth", block:"center"});
+}
+function deleteShift(dayName, shiftId){
+  const day=state.days.find(d=>d.dayName===dayName); if(!day) return;
+  day.shifts=day.shifts.filter(s=>s.id!==shiftId);
+  saveState(); renderAll(); resetManualForm(); setStatus("Turno eliminato");
+}
+function dailySummary(day){
+  let worked=0, ordinary=0, overtime=0;
+  day.shifts.forEach(s=>{const h=shiftHours(s.start,s.end); worked+=h; if(s.isOvertime||s.isTravel) overtime+=h; else ordinary+=h;});
+  return {worked, ordinary, overtime};
+}
+function weeklySummary(){return state.days.reduce((a,d)=>{const x=dailySummary(d); a.worked+=x.worked; a.ordinary+=x.ordinary; a.overtime+=x.overtime; return a;}, {worked:0, ordinary:0, overtime:0});}
+function weeklyCosts(){
+  let ordinaryCost=0, otCost=0, extCost=0;
+  state.days.forEach(day=>day.shifts.forEach(s=>{
+    const emp=findEmp(s.empId), h=shiftHours(s.start,s.end), personal=Number(emp?.cost||0);
+    if(emp?.type==="EXT"){extCost += h*(personal||Number(costEXT.value||0)); return;}
+    if(s.isOvertime||s.isTravel) otCost += h*Number(costOT.value||0); else ordinaryCost += h*personal;
+  }));
+  return {ordinaryCost, otCost, extCost, total:ordinaryCost+otCost+extCost};
+}
+function validation(){
+  const blocking=[];
+  state.days.forEach(day=>{
+    const hasOpen=day.shifts.some(s=>{const emp=findEmp(s.empId); return isManagement(emp)&&s.start<="07:30";});
+    const hasClose=day.shifts.some(s=>{const emp=findEmp(s.empId); return isManagement(emp)&&s.end>="21:15";});
+    if(day.dayName!=="Domenica" && !hasOpen) blocking.push(`${day.dayName}: manca copertura di gerenza in apertura`);
+    if(!hasClose) blocking.push(`${day.dayName}: manca copertura di gerenza in chiusura`);
+  });
+  return blocking;
+}
+function renderEmployees(){
+  const tbody=document.querySelector("#empTable tbody"); tbody.innerHTML="";
+  sortedEmployees().forEach(emp=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><strong>${shortName(emp)}</strong></td><td>${displayRole(emp)}</td><td>${emp.type}</td><td>${emp.level}</td><td>${fmt(emp.cost)} €</td><td>${[emp.dept1,emp.dept2].filter(Boolean).join(" / ")||"-"}</td><td><button class="ghost" onclick='removeEmployee(${JSON.stringify(emp.id)})'>Elimina</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+function renderWeek(){
+  const grid=document.getElementById("weekGrid"); grid.innerHTML="";
+  state.days.forEach(day=>{
+    const sum=dailySummary(day);
+    const box=document.createElement("div"); box.className="daybox";
+    let html=`<h3>${day.dayName}</h3>`;
+    day.shifts.forEach(s=>{
+      const emp=findEmp(s.empId);
+      let cls="shift";
+      if(isManagement(emp)) cls+=" mg";
+      if(emp?.type==="PT") cls+=" pt";
+      if(isFruitShift(s)) cls+=" fruit";
+      if(s.isOvertime) cls+=" ot";
+      html += `<div class="${cls}">
+        <strong>${shortName(emp)}</strong> <span class="badge">${fmt(shiftHours(s.start,s.end))} h</span><br>
+        <span class="small">${s.start}-${s.end}${s.dept?` · ${s.dept}`:""}${s.isTravel?" · Trasf.":""}</span>
+        <div class="actions no-print" style="margin-top:8px">
+          <button class="ghost" onclick='editShift(${JSON.stringify(day.dayName)}, ${JSON.stringify(s.id)})'>Modifica</button>
+          <button class="ghost" onclick='deleteShift(${JSON.stringify(day.dayName)}, ${JSON.stringify(s.id)})'>Elimina</button>
+        </div>
+      </div>`;
+    });
+    html += `<div class="hour-row"><span>Totale giorno</span><strong>${fmt(sum.worked)} h</strong></div>`;
+    box.innerHTML=html; grid.appendChild(box);
+  });
+}
+function renderPrintTable(){
+  const emps=sortedEmployees();
+  let thead='<tr><th class="namecol">Dipendente</th>';
+  DAYS.forEach(d=>thead+=`<th>${d}</th>`);
+  thead+='<th>Totale sett.</th><th>Trasf.</th></tr>';
+  printThead.innerHTML=thead;
+  let tbody='';
+  emps.forEach(emp=>{
+    let total=0, travel=0;
+    tbody+=`<tr><td class="namecol"><strong>${shortName(emp)}</strong></td>`;
+    DAYS.forEach(dayName=>{
+      const day=state.days.find(d=>d.dayName===dayName);
+      const shifts=(day?.shifts||[]).filter(s=>s.empId===emp.id);
+      if(!shifts.length){tbody+=`<td>-</td>`;}
+      else{
+        const cell=shifts.map(s=>{const h=shiftHours(s.start,s.end); total+=h; if(s.isTravel) travel+=h; return `${s.start}-${s.end}<br>${fmt(h)} h`;}).join('<hr style="border:none;border-top:1px solid #ddd;margin:1px 0">');
+        tbody+=`<td>${cell}</td>`;
+      }
+    });
+    tbody+=`<td><strong>${fmt(total)} h</strong></td><td>${travel>0?fmt(travel)+" h":"-"}</td></tr>`;
+  });
+  printTbody.innerHTML=tbody;
+  const dayTotals=DAYS.map(dayName=>{const day=state.days.find(d=>d.dayName===dayName); return day?dailySummary(day).worked:0;});
+  const week=weeklySummary();
+  const travelWeek=state.days.reduce((acc,d)=>acc+d.shifts.filter(s=>s.isTravel).reduce((a,s)=>a+shiftHours(s.start,s.end),0),0);
+  let foot=`<tr><td class="namecol"><strong>Totale giorno</strong></td>`;
+  dayTotals.forEach(v=>foot+=`<td><strong>${fmt(v)} h</strong></td>`);
+  foot+=`<td><strong>${fmt(week.worked)} h</strong></td><td><strong>${travelWeek>0?fmt(travelWeek)+" h":"-"}</strong></td></tr>`;
+  printTfoot.innerHTML=foot;
+}
+function renderKpi(){
+  const week=weeklySummary(), costs=weeklyCosts(), blocking=validation();
+  kpiBudgetProductivity.textContent=`${fmt((Number(monthlyBudget.value||0)/(Number(monthlyHours.value||1))))} €/h`;
+  kpiMonthHoursLeft.textContent=`${fmt(Math.max(0, Number(monthlyHours.value||0)-Number(usedMonthHours.value||0)))} h`;
+  kpiWeekTarget.textContent=`${fmt(Number(weekTargetHours.value||0))} h`;
+  kpiCostWeek.textContent=`${fmt(costs.total)} €`;
+  kpiOrdinaryHours.textContent=`${fmt(week.ordinary)} h`;
+  kpiRealProd.textContent=`${fmt(week.worked>0?Number(weeklyForecast.value||0)/week.worked:0)} €/h`;
+  blockingBox.innerHTML=blocking.length?`<div class="errorbox"><strong>Blocco planning:</strong><br>${blocking.join("<br>")}</div>`:`<div class="notice">Planning valido sul vincolo di gerenza.</div>`;
+  renderPrintTable();
+}
+function exportJSON(){
+  saveFormToState(); saveState();
+  const blob=new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="md_buona_spesa_italia.json"; a.click();
+}
+function exportCSV(){
+  let csv="Dipendente,Ruolo,Lunedì,Martedì,Mercoledì,Giovedì,Venerdì,Sabato,Domenica,Totale settimana,Trasferta\n";
+  sortedEmployees().forEach(emp=>{
+    let row=[shortName(emp),displayRole(emp)], total=0, travel=0;
+    DAYS.forEach(dayName=>{
+      const day=state.days.find(d=>d.dayName===dayName);
+      const shifts=(day?.shifts||[]).filter(s=>s.empId===emp.id);
+      if(!shifts.length){row.push("-");}
+      else{
+        row.push(shifts.map(s=>{const h=shiftHours(s.start,s.end); total+=h; if(s.isTravel) travel+=h; return `${s.start}-${s.end} ${h.toFixed(2)}h`;}).join(" | "));
+      }
+    });
+    row.push(total.toFixed(2), travel.toFixed(2));
+    csv += row.map(x=>String(x).replace(/,/g,';')).join(",")+"\n";
+  });
+  const blob=new Blob([csv], {type:"text/csv;charset=utf-8;"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="md_buona_spesa_italia.csv"; a.click();
+}
+function loadDemo(){state=defaultState(); saveState(); renderAll(); generateWeek(); setStatus("Demo caricata");}
+function renderAll(){populateStaticFields(); populateDeptSelects(); populateManualControls(); renderEmployees(); if(state.days.length){renderWeek();} renderKpi();}
+document.addEventListener('DOMContentLoaded', ()=>{renderAll(); if(!state.days.length) generateWeek();});
 </script>
 </body>
 </html>
