@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1f4e78">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Turnistica 248 v9</title>
+<title>Turnistica 248 v10</title>
 <style>
 :root{--bg:#f6f7fb;--card:#fff;--line:#d9deea;--text:#1f2937;--muted:#6b7280;--accent:#1f4e78;--yellow:#fff2cc;--manager:#dbeafe;--pt:#fff7cc;--manual:#ede9fe;--red:#fef2f2;--green:#e2f0d9;--postit:#fff59d}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -31,8 +31,8 @@ button{cursor:pointer;background:var(--accent);color:#fff;border:none;font-weigh
 <body>
 <div class="wrap">
 <div class="card no-print">
-<h1>Turnistica 248 v9</h1>
-<p class="lead">Vincoli aggiornati: Bruno e Mariagrazia riposano o giovedì o venerdì, oppure anche insieme la domenica. Se riposano insieme la domenica, apre Vincenzo o Deborah e chiude Vincenzo o Deborah. Pierpaolo sempre domenica.</p>
+<h1>Turnistica 248 v10</h1>
+<p class="lead">Versione semplificata: tolti  e . Ogni dipendente può fare un solo turno al giorno: mattina, pomeriggio o sera. Se manca personale per malattia, ferie o permessi, la copertura avviene con straordinario o altra risorsa da altra filiale.</p>
 <div class="actions">
 <button onclick="generateWeek()">Genera settimana</button>
 <button class="secondary" onclick="saveData()">Salva dati</button>
@@ -42,7 +42,7 @@ button{cursor:pointer;background:var(--accent);color:#fff;border:none;font-weigh
 <button class="warn" onclick="window.print()">Esporta PDF</button>
 </div>
 <input id="importFile" type="file" accept=".json" style="display:none">
-<div class="legend" style="margin-top:10px"><span class="m">Gerente</span><span class="p">Part-time</span><span class="o">Straordinario</span><span class="x">Extra manuale</span></div>
+<div class="legend" style="margin-top:10px"><span class="m">Gerente</span><span class="p">Part-time</span><span class="o">Straordinario</span><span class="x">Altra risorsa</span></div>
 <div id="status" class="small" style="margin-top:10px"></div>
 </div>
 
@@ -133,9 +133,12 @@ function weeklySummary(){return state.days.reduce((a,day)=>{day.shifts.forEach(s
 function createDay(dayName,rests,morningMgr,morningPT,pattern,a1,a2,late1,late2){const day={dayName:dayName,shifts:[],rest:[...new Set(rests)].sort()};if(dayName!=="Domenica"){day.shifts.push(makeShift(morningMgr,"Straordinario 06:30-06:45","06:30","06:45",{isOvertimeQuarter:true}));day.shifts.push(makeShift(morningMgr,"Straordinario 06:45-07:00","06:45","07:00",{isOvertimeQuarter:true}));day.shifts.push(makeShift(morningMgr,"Straordinario 07:00-07:15","07:00","07:15",{isOvertimeQuarter:true}));day.shifts.push(makeShift(morningMgr,"Straordinario 07:15-07:30","07:15","07:30",{isOvertimeQuarter:true}));day.shifts.push(makeShift(morningMgr,"Gerente apertura","07:30","14:00"));day.shifts.push(makeShift("Pierpaolo","Mattina fisso","07:00","13:15"));day.shifts.push(makeShift(morningPT,"Cassa/supporto","07:30","14:00",{isPartTime:true}));if(pattern==="A"){day.shifts.push(makeShift(a1,"Gerente chiusura","14:00","21:15",{isClosure:true}));day.shifts.push(makeShift(a2,"Secondo FT pomeriggio","14:00","21:15",{isClosure:true}));day.shifts.push(makeShift(late1,"Supporto sera","17:15","20:30",{isPartTime:true,isClosure:true}))}else{day.shifts.push(makeShift(a1,"Gerente chiusura","14:00","21:15",{isClosure:true}));day.shifts.push(makeShift(a2,"Pomeriggio corto","14:00","17:15",{isPartTime:true}));day.shifts.push(makeShift(late1,"Sera corta","17:15","20:30",{isPartTime:true,isClosure:true}));day.shifts.push(makeShift(late2,"Chiusura","17:30","21:15",{isPartTime:true,isClosure:true}))}}else{day.shifts.push(makeShift(morningMgr,"Gerente apertura","07:00","14:00"));day.shifts.push(makeShift(morningPT,"Mattina domenica","07:00","13:15",{isPartTime:true}));day.shifts.push(makeShift(a2,"Cassa domenica","08:00","14:00",{isPartTime:true}));day.shifts.push(makeShift(a1,"Gerente chiusura","14:00","21:15",{isClosure:true}));day.shifts.push(makeShift(late1,"Supporto chiusura","14:00","21:15",{isPartTime:true,isClosure:true}))}return day}
 
 
+
 function generateWeek(){
 const days=[];
-// Domenica: Bruno e Mariagrazia insieme di riposo, apertura/chiusura gestite da Vincenzo e Deborah
+
+// Un solo turno al giorno per ogni persona.
+// Se manca copertura, si usa straordinario o altra risorsa.
 days.push(createDay("Lunedì",["Enrico"],"Bruno","Deborah","A","Mariagrazia","Vincenzo","Santa",null));
 days.push(createDay("Martedì",["Santa"],"Mariagrazia","Deborah","B","Vincenzo","Giovanna","Enrico","Santa"));
 days.push(createDay("Mercoledì",["Giovanna"],"Bruno","Deborah","B","Vincenzo","Santa","Enrico","Giovanna"));
@@ -143,7 +146,6 @@ days.push(createDay("Giovedì",["Enrico"],"Vincenzo","Deborah","B","Bruno","Sant
 days.push(createDay("Venerdì",["Santa"],"Mariagrazia","Deborah","B","Vincenzo","Giovanna","Enrico","Santa"));
 days.push(createDay("Sabato",["Deborah"],"Bruno","Giovanna","A","Mariagrazia","Vincenzo","Santa",null));
 
-// Sunday custom
 const sunday={dayName:"Domenica",shifts:[],rest:["Pierpaolo","Bruno","Mariagrazia"]};
 sunday.shifts.push(makeShift("Vincenzo","Gerente apertura","07:00","14:00"));
 sunday.shifts.push(makeShift("Santa","Mattina domenica","07:00","13:15",{isPartTime:true}));
@@ -152,27 +154,35 @@ sunday.shifts.push(makeShift("Deborah","Gerente chiusura","14:00","21:15",{isPar
 sunday.shifts.push(makeShift("Enrico","Supporto chiusura","14:00","21:15",{isPartTime:true,isClosure:true}));
 days.push(sunday);
 
+// controllo un solo turno al giorno
+let problems=[];
+for(const day of days){
+  const byName={};
+  for(const s of day.shifts){
+    if(s.isOvertimeQuarter) continue;
+    byName[s.employeeName]=(byName[s.employeeName]||0)+1;
+  }
+  for(const [name,count] of Object.entries(byName)){
+    if(count>1) problems.push(`${day.dayName}: ${name} ha più di un turno`);
+  }
+}
+
 state.days=days;saveState();renderAll();
 const s=weeklySummary();
 const missing=state.employees.filter(e=>countRests(state.days,e.name)===0).map(e=>e.name);
-const brunoRests=state.days.filter(d=>(d.rest||[]).includes("Bruno")).map(d=>d.dayName);
-const mariaRests=state.days.filter(d=>(d.rest||[]).includes("Mariagrazia")).map(d=>d.dayName);
 let msgs=[];
 if(missing.length) msgs.push("Qualcuno è senza riposo: "+missing.join(", "));
-if(!(brunoRests.length===1 && ["Giovedì","Venerdì","Domenica"].includes(brunoRests[0]))) msgs.push("Riposo Bruno fuori vincolo");
-if(!(mariaRests.length===1 && ["Giovedì","Venerdì","Domenica"].includes(mariaRests[0]))) msgs.push("Riposo Mariagrazia fuori vincolo");
-const together = brunoRests[0]===mariaRests[0];
-if(together && brunoRests[0]!=="Domenica") msgs.push("Bruno e Mariagrazia insieme solo la domenica");
+if(problems.length) msgs.push(problems.join(" | "));
 if(!msgs.length){
-  setStatus(`Settimana generata. Bruno riposa ${brunoRests[0]}, Mariagrazia riposa ${mariaRests[0]}. Domenica apertura/chiusura coperte da Vincenzo/Deborah. Ordinario ${fmt(s.ordinary)} h.`, s.ordinary<=248?"ok":"error");
+  setStatus(`Settimana generata. Un solo turno al giorno per persona. In caso di assenze usa straordinario o altra risorsa. Ordinario ${fmt(s.ordinary)} h.`, s.ordinary<=248?"ok":"error");
 }else{
   setStatus(msgs.join(" | "), "error");
 }
 }
-function renderWeek(){const grid=document.getElementById("weekGrid");grid.innerHTML="";state.days.forEach(day=>{const sum=dailySummary(day);const box=document.createElement("div");box.className="daybox";let html=`<h3>${day.dayName}</h3>`;day.shifts.forEach(s=>{const h=shiftHours(s.start,s.end);let cls="shift";if(s.isOvertimeQuarter)cls+=" overtime";if(s.isPartTime&&!s.isOvertimeQuarter)cls+=" parttime";if(isManager(s.employeeName,s.role)&&!s.isOvertimeQuarter)cls+=" manager";if(s.isManualExtra)cls+=" manual";html+=`<div class="${cls}"><strong>${s.employeeName}</strong> <span class="badge">${fmt(h)} h</span> ${isManager(s.employeeName,s.role)&&!s.isOvertimeQuarter?'<span class="badge">Gerente</span>':''} ${s.isPartTime&&!s.isOvertimeQuarter?'<span class="badge">PT</span>':''} ${s.isOvertimeQuarter?'<span class="badge">OT</span>':''} ${s.isManualExtra?'<span class="badge">extra</span>':''}<br><span class="small">${s.role} · ${s.start}-${s.end}</span><div class="actions no-print" style="margin-top:8px"><button class="ghost" onclick='openEditShift(${JSON.stringify(day.dayName)}, ${JSON.stringify(s.id)})'>Modifica</button><button class="danger" onclick='deleteShift(${JSON.stringify(day.dayName)}, ${JSON.stringify(s.id)})'>Elimina</button></div></div>`});html+=`<div class="daily-sum"><div class="hour-row"><span>Ore lavorate giorno</span><strong>${fmt(sum.worked)} h</strong></div><div class="hour-row"><span>Straordinario gerente</span><strong>${fmt(sum.managerOt)} h</strong></div><div class="hour-row"><span>Extra PT 15 min</span><strong>${fmt(sum.ptExtra)} h</strong></div><div class="hour-row"><span>Operatore extra aggiunto</span><strong>${fmt(sum.manualExtra)} h</strong></div><div class="hour-row"><span>Ordinario giorno</span><strong>${fmt(sum.ordinary)} h</strong></div><div class="hour-row"><span>Riposo</span><strong>${(day.rest||[]).join(", ")||"-"}</strong></div></div>`;box.innerHTML=html;grid.appendChild(box)})}
+function renderWeek(){const grid=document.getElementById("weekGrid");grid.innerHTML="";state.days.forEach(day=>{const sum=dailySummary(day);const box=document.createElement("div");box.className="daybox";let html=`<h3>${day.dayName}</h3>`;day.shifts.forEach(s=>{const h=shiftHours(s.start,s.end);let cls="shift";if(s.isOvertimeQuarter)cls+=" overtime";if(s.isPartTime&&!s.isOvertimeQuarter)cls+=" parttime";if(isManager(s.employeeName,s.role)&&!s.isOvertimeQuarter)cls+=" manager";if(s.isManualExtra)cls+=" manual";html+=`<div class="${cls}"><strong>${s.employeeName}</strong> <span class="badge">${fmt(h)} h</span> ${isManager(s.employeeName,s.role)&&!s.isOvertimeQuarter?'<span class="badge">Gerente</span>':''} ${s.isPartTime&&!s.isOvertimeQuarter?'<span class="badge">PT</span>':''} ${s.isOvertimeQuarter?'<span class="badge">OT</span>':''} ${s.isManualExtra?'<span class="badge">extra</span>':''}<br><span class="small">${s.role} · ${s.start}-${s.end}</span><div class="actions no-print" style="margin-top:8px"><button class="ghost" onclick='openEditShift(${JSON.stringify(day.dayName)}, ${JSON.stringify(s.id)})'>Modifica</button><button class="danger" onclick='deleteShift(${JSON.stringify(day.dayName)}, ${JSON.stringify(s.id)})'>Elimina</button></div></div>`});html+=`<div class="daily-sum"><div class="hour-row"><span>Ore lavorate giorno</span><strong>${fmt(sum.worked)} h</strong></div><div class="hour-row"><span>Straordinario gerente</span><strong>${fmt(sum.managerOt)} h</strong></div><div class="hour-row"><span>Extra PT 15 min</span><strong>${fmt(sum.ptExtra)} h</strong></div><div class="hour-row"><span>Altra risorsa aggiunta</span><strong>${fmt(sum.manualExtra)} h</strong></div><div class="hour-row"><span>Ordinario giorno</span><strong>${fmt(sum.ordinary)} h</strong></div><div class="hour-row"><span>Riposo</span><strong>${(day.rest||[]).join(", ")||"-"}</strong></div></div>`;box.innerHTML=html;grid.appendChild(box)})}
 function dailySummary(day){let worked=0,managerOt=0,ptExtra=0,manualExtra=0;const byPerson={};day.shifts.forEach(s=>{const h=shiftHours(s.start,s.end);worked+=h;if(s.isOvertimeQuarter)managerOt+=h;if(s.isPartTime&&!s.isOvertimeQuarter)ptExtra+=0.25;if(s.isManualExtra)manualExtra+=h;byPerson[s.employeeName]=(byPerson[s.employeeName]||0)+h});return{worked,managerOt,ptExtra,manualExtra,ordinary:worked-managerOt-ptExtra,byPerson}}
 function renderDailyHours(){const el=document.getElementById("dailyHoursGrid");el.innerHTML="";state.days.forEach(day=>{const sum=dailySummary(day);const box=document.createElement("div");box.className="daybox";let html=`<h3>${day.dayName}</h3>`;Object.keys(sum.byPerson).sort().forEach(name=>{html+=`<div class="hour-row"><span>${name}</span><strong>${fmt(sum.byPerson[name])} h</strong></div>`});html+=`<div class="hour-row"><span>Straordinario giorno</span><strong>${fmt(sum.managerOt)} h</strong></div><div class="hour-row"><span>Extra operatore giorno</span><strong>${fmt(sum.manualExtra)} h</strong></div>`;box.innerHTML=html;el.appendChild(box)})}
-function renderContractTable(){const tbody=document.querySelector("#contractTable tbody");tbody.innerHTML="";const notes=[];state.employees.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(emp=>{const assigned=ordinaryHoursForPerson(state.days,emp.name);const diff=assigned-Number(emp.weeklyHours||0);const rests=countRests(state.days,emp.name);const tr=document.createElement("tr");tr.innerHTML=`<td><strong>${emp.name}</strong></td><td>${emp.type}</td><td>${fmt(emp.weeklyHours)} h</td><td>${fmt(assigned)} h</td><td>${diff>=0?'+':''}${fmt(diff)} h</td><td>${rests}</td><td>${emp.notes||'-'}</td>`;tbody.appendChild(tr);if(emp.type==="PT"&&diff>0.01)notes.push(`${emp.name} ha un esubero di ${fmt(diff)} h`);if(rests===0)notes.push(`${emp.name} non ha riposo settimanale`)});const s=weeklySummary();if(s.ordinary>248)notes.push(`Con questi vincoli il totale ordinario è ${fmt(s.ordinary)} h e supera 248 h`);const box=document.getElementById("postitBox"),content=document.getElementById("postitContent");if(notes.length){box.style.display="block";content.innerHTML=`Attenzione operativa:<br><br>${notes.join("<br>")}<br><br>Se c'è esubero: altra filiale oppure ferie. Se il totale supera 248, serve alleggerire un turno o correggere manualmente.`}else{box.style.display="none";content.innerHTML=""}}
+function renderContractTable(){const tbody=document.querySelector("#contractTable tbody");tbody.innerHTML="";const notes=[];state.employees.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(emp=>{const assigned=ordinaryHoursForPerson(state.days,emp.name);const diff=assigned-Number(emp.weeklyHours||0);const rests=countRests(state.days,emp.name);const tr=document.createElement("tr");tr.innerHTML=`<td><strong>${emp.name}</strong></td><td>${emp.type}</td><td>${fmt(emp.weeklyHours)} h</td><td>${fmt(assigned)} h</td><td>${diff>=0?'+':''}${fmt(diff)} h</td><td>${rests}</td><td>${emp.notes||'-'}</td>`;tbody.appendChild(tr);if(emp.type==="PT"&&diff>0.01)notes.push(`${emp.name} ha un esubero di ${fmt(diff)} h`);if(rests===0)notes.push(`${emp.name} non ha riposo settimanale`)});const s=weeklySummary();if(s.ordinary>248)notes.push(`Con questi vincoli il totale ordinario è ${fmt(s.ordinary)} h e supera 248 h`);const box=document.getElementById("postitBox"),content=document.getElementById("postitContent");if(notes.length){box.style.display="block";content.innerHTML=`Attenzione operativa:<br><br>${notes.join("<br>")}<br><br>Se manca personale per malattia, ferie o permessi: copri con straordinario oppure con altra risorsa da altra filiale. Se il totale supera 248, serve alleggerire un turno o correggere manualmente.`}else{box.style.display="none";content.innerHTML=""}}
 function renderKpi(){const s=weeklySummary();document.getElementById("kpiWorked").textContent=`${fmt(s.worked)} h`;document.getElementById("kpiMgrOt").textContent=`${fmt(s.managerOt)} h`;document.getElementById("kpiPtOt").textContent=`${fmt(s.ptExtra)} h`;document.getElementById("kpiManualExtra").textContent=`${fmt(s.manualExtra)} h`;document.getElementById("kpiFinal").textContent=`${fmt(s.ordinary)} h`;document.getElementById("kpiCap").textContent=s.ordinary<=248?"OK":"SFORA";document.getElementById("capStatus").className="kpi"+(s.ordinary<=248?" good":"")}
 function exportJSON(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="turnistica_248_v7.json";a.click()}
 function exportCSV(){let csv="Giorno,Nome,Ruolo,Inizio,Fine,Ore,Tipo,Gerente,Chiusura,ManualeExtra,Straordinario\n";state.days.forEach(day=>day.shifts.forEach(s=>{csv+=[day.dayName,s.employeeName,s.role,s.start,s.end,shiftHours(s.start,s.end).toFixed(2),s.isPartTime?"PT":"FT",isManager(s.employeeName,s.role)?"SI":"NO",s.isClosure?"SI":"NO",s.isManualExtra?"SI":"NO",s.isOvertimeQuarter?"SI":"NO"].join(",")+"\n"}));const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="turnistica_248_v7.csv";a.click()}
