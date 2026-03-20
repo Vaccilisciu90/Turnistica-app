@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1f4e78">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Turnistica 248 v10</title>
+<title>Turnistica 248 v11</title>
 <style>
 :root{--bg:#f6f7fb;--card:#fff;--line:#d9deea;--text:#1f2937;--muted:#6b7280;--accent:#1f4e78;--yellow:#fff2cc;--manager:#dbeafe;--pt:#fff7cc;--manual:#ede9fe;--red:#fef2f2;--green:#e2f0d9;--postit:#fff59d}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -31,8 +31,8 @@ button{cursor:pointer;background:var(--accent);color:#fff;border:none;font-weigh
 <body>
 <div class="wrap">
 <div class="card no-print">
-<h1>Turnistica 248 v10</h1>
-<p class="lead">Versione semplificata: tolti  e . Ogni dipendente può fare un solo turno al giorno: mattina, pomeriggio o sera. Se manca personale per malattia, ferie o permessi, la copertura avviene con straordinario o altra risorsa da altra filiale.</p>
+<h1>Turnistica 248 v11</h1>
+<p class="lead">Versione essenziale: gestione turni semplice e diretta.</p>
 <div class="actions">
 <button onclick="generateWeek()">Genera settimana</button>
 <button class="secondary" onclick="saveData()">Salva dati</button>
@@ -54,13 +54,13 @@ button{cursor:pointer;background:var(--accent);color:#fff;border:none;font-weigh
 <div class="field"><label>Cognome</label><input id="empLastName"></div>
 <div class="field"><label>Tipo</label><select id="empType"><option value="FT">Full time</option><option value="PT">Part time</option></select></div>
 <div class="field"><label>Ruolo base</label><select id="empRole"><option value="Manager">Gerente</option><option value="Operatore">Operatore</option></select></div>
-<div class="field"><label>Ore settimanali</label><input id="empHours" type="number" step="0.25" value="24"></div>
-<div class="field"><label>Può aprire</label><select id="empOpen"><option value="SI">SI</option><option value="NO">NO</option></select></div>
-<div class="field"><label>Può chiudere</label><select id="empClose"><option value="SI">SI</option><option value="NO">NO</option></select></div>
-<div class="field wide"><label>Vincoli / note</label><input id="empNotes"></div>
+
+
+
+
 <div class="field"><button onclick="addEmployee()">Aggiungi dipendente</button></div>
 </div>
-<div style="overflow:auto;margin-top:12px"><table id="empTable"><thead><tr><th>Nome e cognome</th><th>Tipo</th><th>Ruolo</th><th>Ore</th><th>Aprire</th><th>Chiudere</th><th>Note</th><th></th></tr></thead><tbody></tbody></table></div>
+<div style="overflow:auto;margin-top:12px"><table id="empTable"><thead><tr><th>Nome e cognome</th><th>Tipo</th><th>Ruolo</th><th></th></tr></thead><tbody></tbody></table></div>
 </div>
 
 <div class="card no-print">
